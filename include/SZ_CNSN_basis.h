@@ -1,11 +1,11 @@
 //==================================================================================================
 //
-// This program allows computing the thermal and kinematic SZ effect using the basis functions of 
-// Chluba, Nagai, Sazonov & Nelson, 2012. Up to 20th order temperature corrections are allowed. 
-// Kinematic corrections can be included up to second order in the clusters peculiar velocity. 
-// For 0.01 < x < 30, 2keV < Te < 75keV and beta < 0.01 the obtained SZ signal should be accurate 
-// at the level of 0.001% when 20 temperature order are included. This precision is acheived using 
-// three temperature pivots, The=0.01, 0.03, and 0.1. For Te < 2keV the asymptotic expansions 
+// This program allows computing the thermal and kinematic SZ effect using the basis functions of
+// Chluba, Nagai, Sazonov & Nelson, 2012. Up to 20th order temperature corrections are allowed.
+// Kinematic corrections can be included up to second order in the clusters peculiar velocity.
+// For 0.01 < x < 30, 2keV < Te < 75keV and beta < 0.01 the obtained SZ signal should be accurate
+// at the level of 0.001% when 20 temperature order are included. This precision is acheived using
+// three temperature pivots, The=0.01, 0.03, and 0.1. For Te < 2keV the asymptotic expansions
 // should be used.
 //
 //==================================================================================================
@@ -13,9 +13,11 @@
 // Author: Jens Chluba  (CITA, University of Toronto)
 //
 // first implementation: April 2012
-// last modification   : July  2012
+// last modification   : April 2018
 //
 //==================================================================================================
+// 18th Apr  2018: improved precision of second derivative with Te
+// 12th Sept 2013: fixed bug because of betac^2 P_2(muc) == beta_para^2 - beta_perp^2/2
 //  4st  Aug: added derivatives of basis functions in the CMB rest frame
 // 22th July: added low and high temperature expansions. Now 2keV < Te < 75keV is covered
 // 21th July: added headers with required data; this avoids time taken for reading the files

@@ -1,0 +1,44 @@
+#============================================================================================
+# rules
+#============================================================================================
+all:
+	make tidy; make wipeDS; \
+    rm -rf ./SZpack.vX; \
+    mkdir ./SZpack.vX; \
+    mkdir ./SZpack.vX/outputs; \
+    mkdir ./SZpack.vX/runfiles; \
+    mkdir ./SZpack.vX/src; \
+    mkdir ./SZpack.vX/include; \
+    cp -r ./Development ./SZpack.vX/.; \
+    cp ./src/SZ_Integral.5D.cpp ./SZpack.vX/src/.; \
+    cp ./src/SZ_Integral.3D.cpp ./SZpack.vX/src/.; \
+    cp ./src/SZ_asymptotic.cpp ./SZpack.vX/src/.; \
+    cp ./src/SZ_CNSN_basis.cpp ./SZpack.vX/src/.; \
+    cp ./src/SZ_CNSN_basis.opt.cpp ./SZpack.vX/src/.; \
+    cp -r ./src/database ./SZpack.vX/src/.; \
+    cp -r ./src/database.opt ./SZpack.vX/src/.; \
+    cp ./include/SZ_Integral.5D.h ./SZpack.vX/include/.; \
+    cp ./include/SZ_Integral.3D.h ./SZpack.vX/include/.; \
+    cp ./include/SZ_asymptotic.h ./SZpack.vX/include/.; \
+    cp ./include/SZ_CNSN_basis.h ./SZpack.vX/include/.; \
+    cp ./include/SZ_CNSN_basis.opt.h ./SZpack.vX/include/.; \
+    cp ./runfiles/parameters.dat ./SZpack.vX/runfiles/.; \
+    cp ./Makefile ./SZpack.vX/.; \
+    cp ./Makefile.in.pub ./SZpack.vX/Makefile.in; \
+    cp ./SZpack.h ./SZpack.vX/.; \
+    cp ./SZpack.cpp ./SZpack.vX/.; \
+    cp ./run_SZpack.cpp ./SZpack.vX/.; \
+    cp ./README ./SZpack.vX/.; \
+    make -f ./python/Makefile clean; \
+    mkdir ./SZpack.vX/python; \
+    cp -r ./python/SZpack.python.h ./SZpack.vX/python/.; \
+    cp -r ./python/SZpack.python.cpp ./SZpack.vX/python/.; \
+    cp -r ./python/setup.py ./SZpack.vX/python/.; \
+    cp -r ./python/Makefile ./SZpack.vX/python/.; \
+    cp -r ./python/SZpack.i ./SZpack.vX/python/.; \
+    cp -r ./python/numpy.i ./SZpack.vX/python/.; \
+
+tarball: all
+	tar -czf SZpack.vX.tar.gz ./SZpack.vX;
+
+#============================================================================================

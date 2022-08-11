@@ -4,20 +4,22 @@
 //
 //==================================================================================================
 //
-// purpose: computation of the SZ signal according to Chluba, Nagai, Sazonov, Nelson, 2012 
+// purpose: computation of the SZ signal according to Chluba, Nagai, Sazonov, Nelson, 2012
 //          and Chluba, Switzer, Nagai, Nelson, 2012.
-// 
+//
 // comments: - computations are performed in the single-scattering approximation
-//           - polarization effects are neglected   
+//           - polarization effects are neglected
 //           - the electron distribution function is assumed to be thermal
 //==================================================================================================
 //
 // Author: Jens Chluba (CITA, University of Toronto and Johns Hopkins University)
 //
 // first implementation: May  2012
-// last modification   : Dec  2012
+// last modification   : Aug  2017
 //
 //==================================================================================================
+// 28th Aug 2017: added y-weighted moment method for temperature corrections
+// 13th May 2015: improved performance of combo-means-methods && fixed bug for asymptotic derivative
 // 20th  Dec: added optimized SZ signal function to minimize number of temperature terms
 // 29th  Aug: added expansion of SZ signal around mean values of tau, TeSZ, and betac*muc with
 //            higher moments included. 
@@ -556,17 +558,26 @@ double compute_SZ_signal_combo_means(double xo,
     double r=dDn_dThe[0]+dDn_dThe[2]*omega;
     
     // velocity - temperature cross term
-    Dcompute_SZ_signal_combo_CMB(xo, 1, 1, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    r+=dDn_dThe[1]*sigma;
-
+    if(sigma!=0.0)
+    {
+        Dcompute_SZ_signal_combo_CMB(xo, 1, 1, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
+        r+=dDn_dThe[1]*sigma;
+    }
+    
     // betac_parallel dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 0, 2, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    r+=dDn_dThe[0]*kappa;
+    if(kappa!=0.0)
+    {
+        Dcompute_SZ_signal_combo_CMB(xo, 0, 2, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
+        r+=dDn_dThe[0]*kappa;
+    }
 
     // betac_perp dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 0, 0, 1, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    r+=dDn_dThe[0]*betac2_perp;
-
+    if(betac2_perp!=0.0)
+    {
+        Dcompute_SZ_signal_combo_CMB(xo, 0, 0, 1, tau, TeSZ, betac_para, 1.0, dDn_dThe);
+        r+=dDn_dThe[0]*betac2_perp;
+    }
+    
     return r;
 }
 
@@ -655,16 +666,25 @@ double compute_SZ_signal_combo_means_ex(double xo,
     double r=dDn_dThe[0]+dDn_dThe[2]*omega[0]+dDn_dThe[3]*omega[1]+dDn_dThe[4]*omega[2];
     
     // velocity - temperature cross term
-    Dcompute_SZ_signal_combo_CMB(xo, 3, 1, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    r+=dDn_dThe[1]*sigma[0]+dDn_dThe[2]*sigma[1]+dDn_dThe[3]*sigma[2];
+    if(sigma[0]!=0.0 || sigma[1]!=0.0 || sigma[2]!=0.0)
+    {
+        Dcompute_SZ_signal_combo_CMB(xo, 3, 1, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
+        r+=dDn_dThe[1]*sigma[0]+dDn_dThe[2]*sigma[1]+dDn_dThe[3]*sigma[2];
+    }
     
     // betac_parallel dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 0, 2, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    r+=dDn_dThe[0]*kappa;
+    if(kappa!=0.0)
+    {
+        Dcompute_SZ_signal_combo_CMB(xo, 0, 2, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
+        r+=dDn_dThe[0]*kappa;
+    }
     
     // betac_perp dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 0, 0, 1, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    r+=dDn_dThe[0]*betac2_perp;
+    if(betac2_perp!=0.0)
+    {
+        Dcompute_SZ_signal_combo_CMB(xo, 0, 0, 1, tau, TeSZ, betac_para, 1.0, dDn_dThe);
+        r+=dDn_dThe[0]*betac2_perp;
+    }
     
     return r;    
 }
@@ -699,6 +719,72 @@ void compute_SZ_signal_combo_means_ex(vector<double> &xo,
     return;
 }    
 
+//==================================================================================================
+//
+// y-weighted moment expansion for up to O(The^4) for thSZ only. Using the definition
+// dy = (kTe / mec^2) dtau in the expressions below, we have the parameters
+//
+// y      : y     = int dy               [dimensionless]
+// TeSZ   : TeSZ  = y^-1 int Te dy       [keV  ]
+// TeSZ2  : TeSZ2 = y^-1 int Te^2 dy     [keV^2]
+// TeSZ3  : TeSZ3 = y^-1 int Te^3 dy     [keV^3]
+// TeSZ4  : TeSZ4 = y^-1 int Te^4 dy     [keV^4]
+//
+// The integrals have to be taken along the considered line-of-sight.
+//
+// [added 28.08.2017 JC]
+//==================================================================================================
+double compute_SZ_signal_combo_means_yw(double xo,
+                                        // mean parameters
+                                        double y, double TeSZ,
+                                        double TeSZ2, double TeSZ3, double TeSZ4)
+{
+    // convert moments to omega_y
+    double The=TeSZ/const_me;
+    double tau=y/The;
+    double oy2=(TeSZ2==0           ? 0 : TeSZ2/pow(TeSZ, 2) - 1.0);
+    double oy3=(TeSZ3==0 || oy2==0 ? 0 : TeSZ3/pow(TeSZ, 3) - 3.0*oy2 - 1.0);
+    double oy4=(TeSZ4==0 || oy3==0 ? 0 : TeSZ4/pow(TeSZ, 4) - 4.0*oy3 - 6.0*oy2 - 1.0);
+
+    vector<double> dDn_dThe;
+    
+    // mean signal + temperature dispersion term
+    Dcompute_SZ_signal_combo_CMB(xo, 4, 0, 0, tau, TeSZ, 0.0, 1.0, dDn_dThe);
+    
+    double H0= dDn_dThe[0];
+    double H2=(dDn_dThe[2]-dDn_dThe[1]+dDn_dThe[0]);
+    double H3=(dDn_dThe[3]-dDn_dThe[2]+dDn_dThe[1]-dDn_dThe[0]);
+    double H4=(dDn_dThe[4]-dDn_dThe[3]+dDn_dThe[2]-dDn_dThe[1]+dDn_dThe[0]);
+    
+    double r=H0+H2*oy2+H3*oy3+H4*oy4;
+    
+    return r;
+}
+
+//--------------------------------------------------------------------------------------------------
+// vector versions (output is returned in xo-vector)
+//--------------------------------------------------------------------------------------------------
+void compute_SZ_signal_combo_means_yw(double *xo, int np,
+                                      // mean parameters
+                                      double y, double TeSZ,
+                                      double TeSZ2, double TeSZ3, double TeSZ4)
+{
+    for(int m=0; m<np; m++)
+        xo[m]=compute_SZ_signal_combo_means_yw(xo[m], y, TeSZ, TeSZ2, TeSZ3, TeSZ4);
+    
+    return;
+}
+
+
+void compute_SZ_signal_combo_means_yw(vector<double> &xo,
+                                      // mean parameters
+                                      double y, double TeSZ,
+                                      double TeSZ2, double TeSZ3, double TeSZ4)
+{
+    compute_SZ_signal_combo_means_yw(&xo[0], xo.size(), y, TeSZ, TeSZ2, TeSZ3, TeSZ4);
+    
+    return;
+}
 
 //==================================================================================================
 //==================================================================================================

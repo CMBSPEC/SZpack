@@ -17,9 +17,10 @@
 // Author: Jens Chluba (CITA, University of Toronto and Johns Hopkins University)
 //
 // first implementation: May 2012
-// last modification   : Dec 2012
+// last modification   : Aug 2017
 //
 //==================================================================================================
+// 28th Aug,  2017: added y-weighted moment method for temperature corrections
 // 20th Dec,  2012: added runmodes CNSNopt and cleaned the routines up.
 //  5th Nov,  2012: added examples for derivative outputs and to illustrate the
 //                  temperature-velocity moment method for smooth cluster profiles.
@@ -101,7 +102,7 @@ void output_header(somestream &ofile,
     ofile << "#\n# Runmode specific parameters:\n# eps= " << eps_Int << endl;
     ofile << "# Te_order= " << Te_order << " beta_order= " << beta_order << endl;
     ofile << "#\n" << setfill('#') << setw(90) << "#" << endl; 
-    ofile << "#\n# Output format: x = (h nu/k T0) | x^3 Dn(x) | DI(x) in MJy/sr " << endl;
+    ofile << "#\n# Output format: x = (h nu/k T0) | nu [GHz] | x^3 Dn(x) | DI(x) in MJy/sr " << endl;
     ofile << "# Here a CMB temperature of T0 = " << T0_CMB << " K is assumed." << endl;
     ofile << "#\n" << setfill('#') << setw(90) << "#" << endl; 
     
@@ -111,9 +112,11 @@ void output_header(somestream &ofile,
 //--------------------------------------------------------------------------------------------------
 void output_to_file(ofstream &f, double x, double Dn)
 {
-    double x3=pow(x, 3);
-    f << x << " " << x3*Dn << " " << Dn_DI_conversion*x3*Dn << endl;
-    if(show_mess) cout  << " x= " << x << " " << x3*Dn << " " << Dn_DI_conversion*x3*Dn << endl;
+    double x3=pow(x, 3), nu=x*T0_CMB/const_h_kb/1.0e+9;
+    f << x << " " << nu << " " << x3*Dn << " " << Dn_DI_conversion*x3*Dn << endl;
+    
+    if(show_mess) cout << " x= " << x << " nu [GHz]" << nu << " "
+                       << x3*Dn << " " << Dn_DI_conversion*x3*Dn << endl;
     
     return;
 }
@@ -436,6 +439,33 @@ void output_SZ_distortion_means(string fname,
     return;
 }
 
+void output_SZ_distortion_means_yw(string fname,
+                                   vector<double> &xa,
+                                   double y, double TeSZ,
+                                   double TeSZ2, double TeSZ3, double TeSZ4)
+{
+    print_message("Using expansion around mean values");
+    
+    int np=xa.size();
+    ofstream ofile(fname.c_str());
+    
+    output_header(ofile, xa[0], xa[np-1], np, y, TeSZ,
+                  0, 0, 0, 0, 0, 0, 0, "means_yw");
+    
+    ofile.precision(16);
+    
+    for(int k=0; k<np ; k++)
+    {
+        double dum=compute_SZ_signal_combo_means_yw(xa[k], y, TeSZ, TeSZ2, TeSZ3, TeSZ4);
+        
+        output_to_file(ofile, xa[k], dum);
+    }
+    
+    ofile.close();
+    
+    return;
+}
+
 //==================================================================================================
 //
 // output for Fig. 8 & 9; this is meant to be an example for the use of this function
@@ -522,24 +552,29 @@ void output_SZ_distortion_derivatives(string fname,
     ofile.precision(16);
     
     vector<double> dDn_dThe;
+    double norm=Dn_DI_conversion;   // in physical units; Set == 1 for dimensionless
     
     for(int k=0; k<np; k++)
     {
         double x3=pow(xa[k], 3);
         ofile << xa[k] << " ";
         
+        // th-SZ terms
         Dcompute_SZ_signal_combo_CMB(xa[k], kmax, 0, 0, Dtau, Te, betac, muc, dDn_dThe);
-        for(int m=0; m<=kmax; m++) ofile << dDn_dThe[m]*x3 << " ";
+        for(int m=0; m<=kmax; m++) ofile << norm*dDn_dThe[m]*x3 << " ";
         
+        // k-SZ terms
         Dcompute_SZ_signal_combo_CMB(xa[k], kmax, 1, 0, Dtau, Te, betac, muc, dDn_dThe);
-        for(int m=0; m<=kmax; m++) ofile << dDn_dThe[m]*x3 << " ";
+        for(int m=0; m<=kmax; m++) ofile << norm*dDn_dThe[m]*x3 << " ";
         
+        // k-SZ second order terms
         Dcompute_SZ_signal_combo_CMB(xa[k], kmax, 2, 0, Dtau, Te, betac, muc, dDn_dThe);
-        for(int m=0; m<=kmax; m++) ofile << dDn_dThe[m]*x3 << " ";
+        for(int m=0; m<=kmax; m++) ofile << norm*dDn_dThe[m]*x3 << " ";
         
+        // k-SZ perpendicular terms (beta_perp^2)
         Dcompute_SZ_signal_combo_CMB(xa[k], kmax, 0, 1, Dtau, Te, betac, muc, dDn_dThe);
-        for(int m=0; m<=kmax; m++) ofile << dDn_dThe[m]*x3 << " ";
-        
+        for(int m=0; m<=kmax; m++) ofile << norm*dDn_dThe[m]*x3 << " ";
+
         //------------------------------------------------------------
         // x-derivatives
         //------------------------------------------------------------
@@ -550,9 +585,11 @@ void output_SZ_distortion_derivatives(string fname,
         double dI=(Ixp-Ixm)/(2.0*0.001);
         double d2I=(Ixp-2.0*Ix+Ixm)/pow(0.001, 2) / 2.0;
         
-        ofile << dI << " " << d2I << endl;
+        ofile << norm*dI << " " << norm*d2I;
+
+        ofile << endl;
         
-        cout  << " x= " << xa[k] << " " << dDn_dThe[0]*x3 << endl;
+        cout  << " x= " << xa[k] << " " << norm*dDn_dThe[0]*x3 << endl;
     }
     
     ofile.close();
@@ -755,7 +792,7 @@ int main(int narg, char *args[])
     //==================================================================
     double xmin=0.1;
     double xmax=30.0;
-    int np=100;
+    int np=500;
     //
     double Dtau=0.01;
     double Te=0.03*const_me;
@@ -914,6 +951,59 @@ int main(int narg, char *args[])
     }
 
     //==================================================================
+    // expansion of SZ signal around mean values using y-weighted values
+    //==================================================================
+    else if(mode=="MEANSYW")
+    {
+        //=======================================================================
+        // example
+        //=======================================================================
+        double y = 5.9252506e-6;
+        double TeSZ = 9.1022072;
+        double TeSZ2 = 85.706477;
+        double TeSZ3=0.0, TeSZ4=0.0;
+        
+        //double y=3.4649141e-06;
+        //double TeSZ = 2.6693119e-05/y;
+        //double TeSZ2 = 0.00022088681/y;
+        //double TeSZ3 = 0.0019503556/y;
+        //double TeSZ4 = 0.018305834/y;
+        
+        output_SZ_distortion_asym(outpath+"SZ_means_II_yw_nr"+add,
+                                  xcmb, y/(TeSZ/const_me), TeSZ,
+                                  0, 0, 0, 0, 0, 0);
+
+        double tau = 0.00024970557;
+        double tTeSZ = 0.0017705674/tau;
+        double tTeSZ2= 0.013640155/tau;
+        double tTeSZ3= 0.11287292/tau;
+        double tTeSZ4= 0.99662961/tau;
+        //double tTeSZ5= 9.3542618/tau;
+        double omegas[3]={tTeSZ2/pow(tTeSZ, 2)-1.0,
+                          tTeSZ3/pow(tTeSZ, 3)-3.0*tTeSZ2/pow(tTeSZ, 2)-1.0,
+                          tTeSZ4/pow(tTeSZ, 4)-4.0*tTeSZ3/pow(tTeSZ, 3)-6.0*tTeSZ2/pow(tTeSZ, 2)-1.0};
+        
+        double sigmas[3]={0, 0, 0};
+        
+        cout << tTeSZ << " " << omegas[0] << " " << omegas[1] << " " << omegas[2] << endl;
+        
+        cout << y << " " << TeSZ << " " << TeSZ2 << " " << TeSZ2/TeSZ/TeSZ-1.0 << " " << sqrt(TeSZ2/TeSZ/TeSZ-1.0)*TeSZ << " keV" <<  endl;
+        wait_f_r();
+        
+        output_SZ_distortion_means(outpath+"SZ_means_II_yw_comp"+add,
+//                                   xcmb, y/(TeSZ/const_me), TeSZ, 0, 0, omegas, sigmas);
+                                   xcmb, tau, tTeSZ, 0, 0, omegas, sigmas);
+
+        // for second order parameters see function itself
+        output_SZ_distortion_means_yw(outpath+"SZ_means_II_yw"+add,
+                                      xcmb, y, TeSZ, TeSZ2, TeSZ3, TeSZ4);
+
+        // for second order parameters see function itself
+        output_SZ_distortion_means_yw(outpath+"SZ_means_II_yw_single"+add,
+                                      xcmb, y, TeSZ, 0, 0, 0);
+    }
+
+    //==================================================================
     // compute null of SZ signal. For details see function
     //==================================================================
     else if(mode=="NULL")
@@ -926,19 +1016,24 @@ int main(int narg, char *args[])
     //==================================================================
     else if(mode=="DERIVS")
     {
-        Dtau=1.0;
+        Dtau=1.0e-2;
         betac=0.0;
+        int maxderiv=4;
         
-        output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.10keV"+add, xcmb, 
-                                         Dtau, 10, betac, muc, 4);
+        output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.5keV"+add, xcmb,
+                                         Dtau, 5, betac, muc, maxderiv);
+        output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.8keV"+add, xcmb,
+                                         Dtau, 8, betac, muc, maxderiv);
+        output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.10keV"+add, xcmb,
+                                         Dtau, 10, betac, muc, maxderiv);
         output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.20keV"+add, xcmb, 
-                                         Dtau, 20, betac, muc, 4);
+                                         Dtau, 20, betac, muc, maxderiv);
         output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.30keV"+add, xcmb, 
-                                         Dtau, 30, betac, muc, 4);
+                                         Dtau, 30, betac, muc, maxderiv);
         output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.40keV"+add, xcmb, 
-                                         Dtau, 40, betac, muc, 4);
+                                         Dtau, 40, betac, muc, maxderiv);
         output_SZ_distortion_derivatives(outpath+"SZ_moments.derivs.50keV"+add, xcmb, 
-                                         Dtau, 50, betac, muc, 4);
+                                         Dtau, 50, betac, muc, maxderiv);
     }
     
     //==================================================================
@@ -1007,6 +1102,60 @@ int main(int narg, char *args[])
                                       xcmb, Dtau, Te, betac, muc, 0.2, 0);
     }
     
+    //==================================================================
+    // average y relativistic corrections
+    //==================================================================
+    else if(mode=="AVYRELSZ")
+    {
+        string fname="./outputs.PIXIE/SZ_normalized.dat";
+        ofstream ofile(fname.c_str());
+        ofile.precision(16);
+        
+        double Te=0.001, DTe=3.0;
+        int nT=10, nfreq=1000;
+
+        vector<double> xa(nfreq);
+        init_xarr(0.01, 25.0, &xa[0], nfreq, 0, 0); // change 1 --> 0 to have
+        
+        vector<double> norm(nT);
+        vector<double> dum(nfreq);
+        vector<vector<double> > SZsig;
+        
+        // compute signals for different temperatures
+        for(int l=0; l<nT; l++)
+        {
+            for(int k=0; k<nfreq; k++)
+                dum[k]=pow(xa[k], 3)*compute_SZ_signal_combo(xa[k], 1.0, Te, 0.0, 1.0, 0.0, 1.0);
+            
+            SZsig.push_back(dum);
+            
+            Te+=DTe;
+        }
+        
+        // compute normalizations
+        for(int l=0; l<10; l++)
+        {
+            norm[l]=0.0;
+            for(int k=0; k<nfreq; k++)
+                norm[l]+=SZsig[l][k];
+            
+            norm[l]*=(xa[2]-xa[1]);
+        }
+        
+        double Io = 269.914232952, xo=0.01760533, fac=6.493939*Io*1.0e-2;
+        // output to file
+        for(int k=0; k<nfreq; k++)
+        {
+            ofile << xa[k]/xo << " ";
+            for(int l=0; l<10; l++)
+                ofile << SZsig[l][k]*fac/norm[l] << " ";
+            
+            ofile << endl;
+        }
+        
+        ofile.close();
+    }
+
     //==================================================================
     else cerr << " Unknown runmode: " << mode << endl;
     

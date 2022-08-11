@@ -13,9 +13,10 @@
 // Author: Jens Chluba  (CITA, University of Toronto)
 //
 // first implementation: April 2012
-// last modification   : Sept  2013
+// last modification   : April 2018
 //
 //==================================================================================================
+// 18th Apr  2018: improved precision of second derivative with Te
 // 12th Sept 2013: fixed bug because of betac^2 P_2(muc) == beta_para^2 - beta_perp^2/2
 //  4st  Aug: added derivatives of basis functions in the CMB rest frame
 // 22th July: added low and high temperature expansions. Now 2keV < Te < 75keV is covered
@@ -501,12 +502,14 @@ void compute_all_Te_derivatives_upto_dThe_CNSN(double x, double The,
         dp2=f(x, The*(1.0+2*eps), beta_para, beta_perp, The_ref, sp_th, sp_d, sp_q, sp_m);
         dm2=f(x, The*(1.0-2*eps), beta_para, beta_perp, The_ref, sp_th, sp_d, sp_q, sp_m);
         
+        //dDn_dThe[1]=(dp-dm)/2.0/eps;                              // only second order accurate
         dDn_dThe[1]=(-dp2+8.0*dp-8.0*dm+dm2)/12.0/eps;
-        
+
         if(dThe>1)
         {
-            dDn_dThe[2]=(dp-2.0*d0+dm)/pow(eps, 2) / (2.0);
-            
+            // dDn_dThe[2]=(dp-2.0*d0+dm)/pow(eps, 2) / (2.0);      // only second order accurate
+            dDn_dThe[2]=-(dp2-16.0*dp+30.0*d0-16.0*dm+dm2)/12.0/pow(eps, 2) / (2.0);
+
             if(dThe>2)
             {
                 dDn_dThe[3]=(dp2-2.0*dp+2.0*dm-dm2)/2.0/pow(eps, 3) / (6.0);

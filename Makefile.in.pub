@@ -16,10 +16,10 @@ LXXFLAGS =
 # GSL lib
 #===============================================================================
 GSL          = gsl
-#GSL_INC_PATH = /usr/local/include/
-#GSL_LIB_PATH = /usr/local/lib/
-GSL_INC_PATH = /opt/local/include/
-GSL_LIB_PATH = /opt/local/lib/
+GSL_INC_PATH = /usr/local/include/
+GSL_LIB_PATH = /usr/local/lib/
+#GSL_INC_PATH = /opt/local/include/
+#GSL_LIB_PATH = /opt/local/lib/
 LIBSGSL      = -L$(GSL_LIB_PATH) -l$(GSL) -lgslcblas
 
 #===============================================================================
@@ -64,9 +64,8 @@ OBJSLIB = $(SRC_DIR)/SZ_Integral.5D.o \
           $(SRC_DIR)/SZ_Integral.3D.o \
           $(SRC_DIR)/SZ_asymptotic.o \
           $(SRC_DIR)/SZ_CNSN_basis.o \
-          $(SRC_DIR)/SZ_CNSN_basis.opt.o 
-#          $(SRC_DIR)/SZ_cluster_profiles.o 
-       
+          $(SRC_DIR)/SZ_CNSN_basis.opt.o
+
 OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o
 
 #===============================================================================

@@ -262,6 +262,27 @@ void compute_combo_means_ex(double *xo, int np,
     return;
 }
 
+//--------------------------------------------------------------------------------------------------
+//
+// y-weighted moment expansion
+//
+//--------------------------------------------------------------------------------------------------
+double compute_combo_means_yw(double xo,
+                              // mean parameters
+                              double tau, double TeSZ,
+                              double TeSZ2, double TeSZ3, double TeSZ4)
+{
+    return compute_SZ_signal_combo_means_yw(xo, tau, TeSZ, TeSZ2, TeSZ3, TeSZ4);
+}
+
+void compute_combo_means_yw(double *xo, int np,
+                            // mean parameters
+                            double tau, double TeSZ,
+                            double TeSZ2, double TeSZ3, double TeSZ4)
+{
+    compute_SZ_signal_combo_means_yw(xo, np, tau, TeSZ, TeSZ2, TeSZ3, TeSZ4);
+    return;
+}
 
 //--------------------------------------------------------------------------------------------------
 // 

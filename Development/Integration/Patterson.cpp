@@ -309,7 +309,7 @@ int Integrate_using_Patterson(double a, double b, double epsrel, double epsabs,
     
     double xc=(a+b)/2.0;
     double Dx=(b-a)/2.0;
-    int ifail;
+    int ifail=1;
     
     double fi=fptr(xc);
     vector<double> Patterson_fvals(1, fi);
@@ -338,10 +338,10 @@ int Integrate_using_Patterson(double a, double b, double epsrel, double epsabs,
         //==========================================================================================
         // check error
         //==========================================================================================
-        if(fabs(Dr)<=max(epsabs, fabs( *r)*epsrel)) return 0;
+        if(fabs(Dr)<=max(epsabs, fabs( *r)*epsrel)) return ifail;
     }
     
-    return 1;           
+    return ifail;
 }
     
 //==================================================================================================
@@ -432,7 +432,7 @@ int Integrate_using_Patterson(double a, double b, double epsrel, double epsabs,
     
     double xc=(a+b)/2.0;
     double Dx=(b-a)/2.0;
-    int ifail;
+    int ifail=1;
     
     double fi=fptr(xc, p);
     vector<double> Patterson_fvals(1, fi);
@@ -456,10 +456,10 @@ int Integrate_using_Patterson(double a, double b, double epsrel, double epsabs,
         //==========================================================================================
         // check error
         //==========================================================================================
-        if(fabs(Dr)<=max(epsabs, fabs( *r)*epsrel)) return 0;
+        if(fabs(Dr)<=max(epsabs, fabs( *r)*epsrel)) return ifail;
     }
     
-    return 1;           
+    return ifail;
 }
     
 

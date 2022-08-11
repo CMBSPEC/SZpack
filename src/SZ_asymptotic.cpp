@@ -13,9 +13,10 @@
 // Author: Jens Chluba  (CITA, University of Toronto)
 //
 // first implementation: April 2012
-// last modification   : Sept  2013
+// last modification   : May   2015
 //
 //==================================================================================================
+// 13th May  2015: fixed bug in 'Dn_dbeta_para_asymptotic_CMB' for betapara==0
 // 12th Sept 2013: fixed bug for negative beta_para (thanks to John ZuHone & Tony Mroczkowski)
 //  4st  Aug 2012: added derivatives of basis functions in the CMB rest frame
 // 10th July 2012: added basis functions in the CMB rest frame
@@ -51,7 +52,7 @@ using namespace std;
 // analytic tables of moments for monopole, dipole and quadrupole scattering up to The^11
 //
 //==================================================================================================
-const int order_Tmax_Y=11;
+//const int order_Tmax_Y=11;
 
 //==================================================================================================
 // monopole scattering
@@ -683,11 +684,11 @@ double Dn_asymptotic_CMB_for_The(double x, double The, double beta_para, double 
 double Dn_dbeta_para_asymptotic_CMB(double x, double The, double beta_para, double beta_perp)
 {
     // 12th Sept 2013: fixed bug for negative beta_para (thanks to John ZuHone & Tony Mroczkowski)
-    double sig=beta_para/fabs(beta_para);    
+    double sig=beta_para/fabs(beta_para);
     double Dn_k1= Dn_kSZ_appr1_CMB(x, The, 1.0, 1.0, 11);
-    double Dn_k2 =2.0*sig*Dn_kSZ_appr2_CMB(x, The, sqrt(fabs(beta_para)), 1.0, 11);
+    double Dn_k2 =(beta_para!=0.0 ? 2.0*sig*Dn_kSZ_appr2_CMB(x, The, sqrt(fabs(beta_para)), 1.0, 11) : 0.0);
     double Dn_k2m=2.0*beta_para*Dn_kSZ_appr2m_CMB(x, The, 1.0, 11);
-
+    
     return Dn_k1+Dn_k2+Dn_k2m;
 }
 
@@ -780,7 +781,7 @@ void Dcompute_SZ_distortion_asymptotic_CMB(double x,
     
     else if(dbeta_para==1)
     {
-        compute_all_Te_derivatives_upto_dThe(x, The, betac_para, betac_perp, dThe, 
+        compute_all_Te_derivatives_upto_dThe(x, The, betac_para, betac_perp, dThe,
                                              Dn_dbeta_para_asymptotic_CMB,
                                              dDn_dThe);  
     }

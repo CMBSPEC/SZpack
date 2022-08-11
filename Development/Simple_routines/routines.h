@@ -1,9 +1,11 @@
 //======================================================================================
 // Author: Jens Chluba 
 // first implementation: Jan 2002
+// last modification: June 2012
 //
 // Purpose: collection of several simple routines
 //======================================================================================
+// Jun 2012: fixed a memory issue with spline setup routines.
 // Jan 2012: added simple routines to load tables of data and create splines
 // Dec 2011: added routines for Gamma and incomplete Gamma functions
 
@@ -34,12 +36,6 @@ double log10factorial_full(int n);
 double factorial_corrfac(int n);
 
 //======================================================================================
-// Double factorial n!!
-//======================================================================================
-double log10doublefactorial(int n);
-double doublefactorial(int n);
-
-//======================================================================================
 // checking for nan
 //======================================================================================
 bool isnan_JC(double a);
@@ -47,9 +43,13 @@ bool isnan_JC(double a);
 //======================================================================================
 // routines for interpolation; based in GSL
 //======================================================================================
-int calc_spline_coeffies_JC(int nxi, const double *za, const double *ya, string variable="");
+int calc_spline_coeffies_JC(int nxi, const double *za, const double *ya, 
+                            string variable="");
+
 void update_spline_coeffies_JC(int memindex, int nxi, 
-                               const double *za, const double *ya, string variable="");
+                               const double *za, const double *ya, 
+                               string variable="");
+
 double calc_spline_JC(double x, int memindex, string mess="");
 
 void free_spline_JC(int memindex, string mess="");

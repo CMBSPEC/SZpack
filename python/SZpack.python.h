@@ -166,6 +166,21 @@ void compute_combo_means_ex(double *xo, int np,
                             double kappa, double betac2_perp);
 
 //--------------------------------------------------------------------------------------------------
+//
+// y-weighted moment expansion
+//
+//--------------------------------------------------------------------------------------------------
+double compute_combo_means_yw(double xo,
+                              // mean parameters
+                              double tau, double TeSZ,
+                              double TeSZ2, double TeSZ3, double TeSZ4);
+
+void compute_combo_means_yw(double *xo, int np,
+                            // mean parameters
+                            double tau, double TeSZ,
+                            double TeSZ2, double TeSZ3, double TeSZ4);
+
+//--------------------------------------------------------------------------------------------------
 // 
 // Cross-over frequency of the SZ signal
 //

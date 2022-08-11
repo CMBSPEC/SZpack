@@ -1,9 +1,12 @@
 //======================================================================================
 // Author: Jens Chluba 
 // first implementation: Jan 2002
+// last modification: June 2012
 //
 // Purpose: collection of several simple routines
 //======================================================================================
+// Jul 2012: fixed a memory problem with gsl-1.15 compatibility of splines.
+// Jun 2012: fixed a memory issue with spline setup routines.
 // Jan 2012: added simple routines to load tables of data and create splines
 // Dec 2011: added routines for Gamma and incomplete Gamma functions
 
@@ -88,29 +91,39 @@ double Dawson_Int(const double &x)
     xa=fabs(x);
     if(xa<2.5) {
         y=x*x;
-        fn=(((((((Dawson_b[8]*y+Dawson_b[7])*y+Dawson_b[6])*y+Dawson_b[5])*y+Dawson_b[4])*y+Dawson_b[3])*y+Dawson_b[2])*y+Dawson_b[1])*y+Dawson_b[0];
-        fd=((((((((Dawson_a[8]*y+Dawson_a[7])*y+Dawson_a[6])*y+Dawson_a[5])*y+Dawson_a[4])*y+Dawson_a[3])*y+Dawson_a[2])*y+Dawson_a[1])*y+Dawson_a[0])*y+1;
+        fn=(((((((Dawson_b[8]*y+Dawson_b[7])*y+Dawson_b[6])*y+Dawson_b[5])*y
+               +Dawson_b[4])*y+Dawson_b[3])*y+Dawson_b[2])*y+Dawson_b[1])*y+Dawson_b[0];
+        fd=((((((((Dawson_a[8]*y+Dawson_a[7])*y+Dawson_a[6])*y+Dawson_a[5])*y
+                +Dawson_a[4])*y+Dawson_a[3])*y+Dawson_a[2])*y+Dawson_a[1])*y+Dawson_a[0])*y+1;
         f=x*fn/fd;
     }
     
     else if(xa<4.0) {
         y=x*x;
-        fn=((((((((Dawson_b1[9]*y+Dawson_b1[8])*y+Dawson_b1[7])*y+Dawson_b1[6])*y+Dawson_b1[5])*y+Dawson_b1[4])*y+Dawson_b1[3])*y+Dawson_b1[2])*y+Dawson_b1[1])*y+Dawson_b1[0];
-        fd=((((((((Dawson_a1[8]*y+Dawson_a1[7])*y+Dawson_a1[6])*y+Dawson_a1[5])*y+Dawson_a1[4])*y+Dawson_a1[3])*y+Dawson_a1[2])*y+Dawson_a1[1])*y+Dawson_a1[0])*y+1;
+        fn=((((((((Dawson_b1[9]*y+Dawson_b1[8])*y+Dawson_b1[7])*y+Dawson_b1[6])*y
+                +Dawson_b1[5])*y+Dawson_b1[4])*y+Dawson_b1[3])*y+Dawson_b1[2])*y
+            +Dawson_b1[1])*y+Dawson_b1[0];
+        fd=((((((((Dawson_a1[8]*y+Dawson_a1[7])*y+Dawson_a1[6])*y+Dawson_a1[5])*y
+                +Dawson_a1[4])*y+Dawson_a1[3])*y+Dawson_a1[2])*y+Dawson_a1[1])*y
+            +Dawson_a1[0])*y+1;
         f=x*fn/fd;
     }
     
     else if(xa<5.5) {
         y=x*x;
-        fn=(((((((Dawson_b2[8]*y+Dawson_b2[7])*y+Dawson_b2[6])*y+Dawson_b2[5])*y+Dawson_b2[4])*y+Dawson_b2[3])*y+Dawson_b2[2])*y+Dawson_b2[1])*y+Dawson_b2[0];
-        fd=(((((((Dawson_a2[7]*y+Dawson_a2[6])*y+Dawson_a2[5])*y+Dawson_a2[4])*y+Dawson_a2[3])*y+Dawson_a2[2])*y+Dawson_a2[1])*y+Dawson_a2[0])*y+1;
+        fn=(((((((Dawson_b2[8]*y+Dawson_b2[7])*y+Dawson_b2[6])*y+Dawson_b2[5])*y
+               +Dawson_b2[4])*y+Dawson_b2[3])*y+Dawson_b2[2])*y+Dawson_b2[1])*y+Dawson_b2[0];
+        fd=(((((((Dawson_a2[7]*y+Dawson_a2[6])*y+Dawson_a2[5])*y+Dawson_a2[4])*y
+               +Dawson_a2[3])*y+Dawson_a2[2])*y+Dawson_a2[1])*y+Dawson_a2[0])*y+1;
         f=x*fn/fd;
     }
     
     else {
         y=1./(x*x);
-        fn=(((((Dawson_b3[6]*y+Dawson_b3[5])*y+Dawson_b3[4])*y+Dawson_b3[3])*y+Dawson_b3[2])*y+Dawson_b3[1])*y+Dawson_b3[0];
-        fd=((((((Dawson_a3[6]*y+Dawson_a3[5])*y+Dawson_a3[4])*y+Dawson_a3[3])*y+Dawson_a3[2])*y+Dawson_a3[1])*y+Dawson_a3[0])*y+1;
+        fn=(((((Dawson_b3[6]*y+Dawson_b3[5])*y+Dawson_b3[4])*y+Dawson_b3[3])*y
+             +Dawson_b3[2])*y+Dawson_b3[1])*y+Dawson_b3[0];
+        fd=((((((Dawson_a3[6]*y+Dawson_a3[5])*y+Dawson_a3[4])*y+Dawson_a3[3])*y
+              +Dawson_a3[2])*y+Dawson_a3[1])*y+Dawson_a3[0])*y+1;
         f=fn/(fd*x);
     }
     return f;
@@ -145,16 +158,20 @@ double erf_JC(const double &x)
     if(fabs(x)<2.0) {
         /*  Use approximation for Erf(x)/x */
         y=x*x;
-        fn=((((((erf_b[7]*y+erf_b[6])*y+erf_b[5])*y+erf_b[4])*y+erf_b[3])*y+erf_b[2])*y+erf_b[1])*y+erf_b[0];
-        fd=((((((erf_a[6]*y+erf_a[5])*y+erf_a[4])*y+erf_a[3])*y+erf_a[2])*y+erf_a[1])*y+erf_a[0])*y+1;
+        fn=((((((erf_b[7]*y+erf_b[6])*y+erf_b[5])*y+erf_b[4])*y+erf_b[3])*y
+             +erf_b[2])*y+erf_b[1])*y+erf_b[0];
+        fd=((((((erf_a[6]*y+erf_a[5])*y+erf_a[4])*y+erf_a[3])*y+erf_a[2])*y
+             +erf_a[1])*y+erf_a[0])*y+1;
         f=x*fn/fd;
     }
     
     else {
         /*  Use approximation for x*Exp(x^2)*Erfc(x) */
         y=1.0/(x*x);
-        fn=((((((erf_b1[7]*y+erf_b1[6])*y+erf_b1[5])*y+erf_b1[4])*y+erf_b1[3])*y+erf_b1[2])*y+erf_b1[1])*y+erf_b1[0];
-        fd=((((((erf_a1[6]*y+erf_a1[5])*y+erf_a1[4])*y+erf_a1[3])*y+erf_a1[2])*y+erf_a1[1])*y+erf_a1[0])*y+1;
+        fn=((((((erf_b1[7]*y+erf_b1[6])*y+erf_b1[5])*y+erf_b1[4])*y+erf_b1[3])*y
+             +erf_b1[2])*y+erf_b1[1])*y+erf_b1[0];
+        fd=((((((erf_a1[6]*y+erf_a1[5])*y+erf_a1[4])*y+erf_a1[3])*y+erf_a1[2])*y
+             +erf_a1[1])*y+erf_a1[0])*y+1;
         f=1.-exp(-x*x)*fn/(fd*fabs(x));
         if(x<0.0) f=-f;
     }
@@ -190,16 +207,20 @@ double erfc_JC(const double &x)
     if(fabs(x)<2.0) {
         /*  Use approximation for Erf(x)/x */
         y=x*x;
-        fn=((((((erfc_b[7]*y+erfc_b[6])*y+erfc_b[5])*y+erfc_b[4])*y+erfc_b[3])*y+erfc_b[2])*y+erfc_b[1])*y+erfc_b[0];
-        fd=((((((erfc_a[6]*y+erfc_a[5])*y+erfc_a[4])*y+erfc_a[3])*y+erfc_a[2])*y+erfc_a[1])*y+erfc_a[0])*y+1;
+        fn=((((((erfc_b[7]*y+erfc_b[6])*y+erfc_b[5])*y+erfc_b[4])*y+erfc_b[3])*y
+             +erfc_b[2])*y+erfc_b[1])*y+erfc_b[0];
+        fd=((((((erfc_a[6]*y+erfc_a[5])*y+erfc_a[4])*y+erfc_a[3])*y+erfc_a[2])*y
+             +erfc_a[1])*y+erfc_a[0])*y+1;
         f=1.-x*fn/fd;
     }
     
     else {
         /*  Use approximation for x*Exp(x^2)*Erfc(x) */
         y=1.0/(x*x);
-        fn=((((((erfc_b1[7]*y+erfc_b1[6])*y+erfc_b1[5])*y+erfc_b1[4])*y+erfc_b1[3])*y+erfc_b1[2])*y+erfc_b1[1])*y+erfc_b1[0];
-        fd=((((((erfc_a1[6]*y+erfc_a1[5])*y+erfc_a1[4])*y+erfc_a1[3])*y+erfc_a1[2])*y+erfc_a1[1])*y+erfc_a1[0])*y+1;
+        fn=((((((erfc_b1[7]*y+erfc_b1[6])*y+erfc_b1[5])*y+erfc_b1[4])*y+erfc_b1[3])*y
+             +erfc_b1[2])*y+erfc_b1[1])*y+erfc_b1[0];
+        fd=((((((erfc_a1[6]*y+erfc_a1[5])*y+erfc_a1[4])*y+erfc_a1[3])*y+erfc_a1[2])*y
+             +erfc_a1[1])*y+erfc_a1[0])*y+1;
         f=exp(-x*x)*fn/(fd*fabs(x));
         if(x<0.0) f=2.-f;
     }
@@ -272,25 +293,6 @@ double factorial_corrfac(int n)
 }
 
 //======================================================================================
-// Double factorial n!!
-//======================================================================================
-double log10doublefactorial(int n)
-{
-	if(n<=1) return log10(1.0);
-    
-	// here the useful relation is (2m-1)!!=(2m)! / m! / 2^m
-	int m;
-	//
-	if ( n % 2 == 0 ) m=n/2;
-	else m=(n+1)/2;
-    
-	return log10factorial(2*m) - log10factorial(m) - m*log10(2.0);
-}
-
-double doublefactorial(int n)
-{ return pow(10.0, log10doublefactorial(n)); }
-
-//======================================================================================
 // checking for nan
 //======================================================================================
 bool isnan_JC(double a)
@@ -303,7 +305,9 @@ bool isnan_JC(double a)
 }
 
 //===================================================================================
+//
 // Spline interpolation using the GSL libray
+//
 //===================================================================================
 vector<bool> allocvec;
 vector<string> strvec;
@@ -328,12 +332,15 @@ int calc_spline_coeffies_JC(int nxi, const double *za, const double *ya, string 
     
     gsl_spline_init (splinevec[element], za, ya, nxi);
     
-    allocvec.push_back(true);
+    allocvec.push_back(1);
     
     return element;
 }
 
-void update_spline_coeffies_JC(int memindex, int nxi, const double *za, const double *ya, string variable)
+//===================================================================================
+void update_spline_coeffies_JC(int memindex, int nxi, 
+                               const double *za, const double *ya, 
+                               string variable)
 {
     if(allocvec[memindex])
     {
@@ -346,37 +353,64 @@ void update_spline_coeffies_JC(int memindex, int nxi, const double *za, const do
         
         gsl_spline_init(splinevec[memindex], za, ya, nxi);
     }
-    else{ cerr << " update_spline_coeffies_JC::This part of memory was not set... " << endl; exit(0); }
+    else
+    { 
+        cerr << " update_spline_coeffies_JC::This part of memory was not set... " << endl; 
+        exit(0); 
+    }
 
     return;
 }
 
+//===================================================================================
 double calc_spline_JC(double x, int memindex, string mess)
 {   
-    //cout << " x= "<< x << " memory index: " << memindex << " called by: " << mess << " name of variable: " << strvec[memindex] << endl;
+/*  
+    cout.precision(16);
+    cout << " x= "<< x << " memory index: " << memindex 
+         << " called by: " << mess 
+         << " name of variable: " << strvec[memindex] 
+         << " xmin= " << splinevec[memindex]->interp->xmin 
+         << " xmax= " << splinevec[memindex]->interp->xmax << endl;
+*/
+    // no extrapolation but this is needed to make GSL not complain if x~xmin or xmax
+    if(x<=splinevec[memindex]->interp->xmin*(1.0+1.0e-14) && 
+       x>=splinevec[memindex]->interp->xmin*(1.0-1.0e-14)) 
+        
+        x=splinevec[memindex]->interp->xmin*(1.0+1.0e-14);
+    
+    if(x>=splinevec[memindex]->interp->xmax*(1.0-1.0e-14) &&
+       x<=splinevec[memindex]->interp->xmax*(1.0+1.0e-14)) 
+        
+        x=splinevec[memindex]->interp->xmax*(1.0-1.0e-14);
+    
     return gsl_spline_eval(splinevec[memindex], x, accvec[memindex]); 
 }
 
+//===================================================================================
 void free_spline_JC(int memindex, string mess)
 {
-    if(allocvec[memindex])
+    if( memindex < (int)allocvec.size() )
     {
-        //cout << " free_spline_JC:: called by " << mess << endl;
-        strvec[memindex]=" splines were deleted by " + mess;
-        gsl_spline_free (splinevec[memindex]);
-        gsl_interp_accel_free (accvec[memindex]);
-    }
+        if(allocvec[memindex])
+        {
+            // cout << " free_spline_JC:: called by " << mess << endl;
+            strvec[memindex]=" splines were deleted by " + mess;
+            gsl_spline_free (splinevec[memindex]);
+            gsl_interp_accel_free (accvec[memindex]);
+        }
     
-    allocvec[memindex]=false;
+        allocvec[memindex]=0;
+    }
     
     return;
 }
 
 void free_all_splines_JC()
 {
-    cout << "\n %--------------------------------------------% " << endl;
+    cout << "\n %------------------------------------------------% " << endl;
     cout << " % Clearing all GSL-splines (routines.cpp) " << endl;
-    cout << " %--------------------------------------------%\n " << endl;
+    cout << " %------------------------------------------------%\n " << endl;
     
     for(int k=0; k<(int)splinevec.size(); k++)
     {
@@ -395,10 +429,14 @@ void free_all_splines_JC()
     return;
 }
 
+//===================================================================================
 void show_spline_memory()
 {
     for(int i=0; i<(int)strvec.size(); i++) 
         cout << " memory index: " << i << " name of variable: " << strvec[i] << endl;
+    
+    if(strvec.size()==0) cout << " show_spline_memory:: No splines allocated. " << endl;
+    
     return;
 }
 
@@ -429,17 +467,38 @@ void load_data_from_file(string fname, int cols, vector<int> &spline_mem_indices
     vector<double> xarr(Xi_Data.size());
     vector<double> yarr(Xi_Data.size());
     
-    if(logx) for(int i=0; i< (int)Xi_Data.size(); i++) xarr[i] = log(Xi_Data[i][0]);
-    else for(int i=0; i< (int)Xi_Data.size(); i++) xarr[i] = Xi_Data[i][0];
-    
-    for(int c=1; c<cols; c++)
-    {
-        if(logy) for(int i=0; i<(int)Xi_Data.size(); i++) yarr[i] = log(Xi_Data[i][c]);
-        else for(int i=0; i<(int)Xi_Data.size(); i++) yarr[i] = Xi_Data[i][c];
+    if(Xi_Data[0][0]<Xi_Data[1][0])
+    {       
         
-        spline_mem_indices[c-1]=calc_spline_coeffies_JC((int)Xi_Data.size(), 
-                                                        &xarr[0], &yarr[0], 
-                                                        " load_data_from_file ");
+        if(logx) for(int i=0; i< (int)Xi_Data.size(); i++) xarr[i] = log(Xi_Data[i][0]);
+        else for(int i=0; i< (int)Xi_Data.size(); i++) xarr[i] = Xi_Data[i][0];
+        
+        for(int c=1; c<cols; c++)
+        {
+            if(logy) for(int i=0; i<(int)Xi_Data.size(); i++) yarr[i] = log(Xi_Data[i][c]);
+            else for(int i=0; i<(int)Xi_Data.size(); i++) yarr[i] = Xi_Data[i][c];
+            
+            spline_mem_indices[c-1]=calc_spline_coeffies_JC((int)Xi_Data.size(), 
+                                                            &xarr[0], &yarr[0], 
+                                                            " load_data_from_file ");
+        }
+    }
+    else 
+    {
+        int nmax=Xi_Data.size()-1;
+        
+        if(logx) for(int i=0; i<(int)Xi_Data.size(); i++) xarr[nmax-i] = log(Xi_Data[i][0]);
+        else for(int i=0; i< (int)Xi_Data.size(); i++) xarr[nmax-i] = Xi_Data[i][0];
+        
+        for(int c=1; c<cols; c++)
+        {
+            if(logy) for(int i=0; i<(int)Xi_Data.size(); i++) yarr[nmax-i] = log(Xi_Data[i][c]);
+            else for(int i=0; i<(int)Xi_Data.size(); i++) yarr[nmax-i] = Xi_Data[i][c];
+            
+            spline_mem_indices[c-1]=calc_spline_coeffies_JC((int)Xi_Data.size(), 
+                                                            &xarr[0], &yarr[0], 
+                                                            " load_data_from_file ");
+        }        
     }
     
     vdum.clear();
@@ -488,7 +547,11 @@ void polint_routines(const double *xa, const double *ya, int n, const double x, 
             w=c[i+1]-d[i];
             if ((den=ho-hp) == 0.0)
             { 
-                cout << " polint error " << ho << " " << x << " " << hp << " " << i << " " << xa[i] << " " << ya[i] << " " << m << " " << xa[i+m] << " " << ya[i+m] << endl; 
+                cout << " polint error " << ho << " " << x << " " << hp << " " 
+                     << i << " " << xa[i] << " " << ya[i] << " " 
+                     << m << " " << xa[i+m] << " " << ya[i+m] 
+                     << endl; 
+                
                 wait_f_r(); 
             }
             den=w/den;
@@ -500,7 +563,8 @@ void polint_routines(const double *xa, const double *ya, int n, const double x, 
 }
 
 //======================================================================================
-void polint_JC(const double *xa, const double *ya, int na, const double x, int &istart, int npol, double *y, double *dy)
+void polint_JC(const double *xa, const double *ya, int na, const double x, 
+               int &istart, int npol, double *y, double *dy)
 {
     // npol-1 is degree of the interpolating polynomial
     long unsigned int j=istart;
@@ -519,7 +583,8 @@ void polint_JC(const double *xa, const double *ya, int na, const double x, int &
 }
 
 //======================================================================================
-void polint_JC(const double *xa, const double *ya, int na, const double x, int npol, double *y, double *dy)
+void polint_JC(const double *xa, const double *ya, int na, const double x, 
+               int npol, double *y, double *dy)
 {
     // npol-1 is degree of the interpolating polynomial
     int j=0;
@@ -534,7 +599,8 @@ void init_xarr(double x0, double xm, double *xarr, int npts, int method_flag, in
 {
     if(method_flag!=0 && method_flag!=1 && method_flag!=2) 
     {
-    cout << " Choose initialisation strategy for x-array (0 for linear or 1 for log or 2 for log-linear) !" << endl;
+    cout << " Choose initialisation strategy for x-array" 
+         << " (0 for linear or 1 for log or 2 for log-linear) !" << endl;
     cin  >> method_flag;
     }
     
@@ -544,7 +610,8 @@ void init_xarr(double x0, double xm, double *xarr, int npts, int method_flag, in
     // linear
     if(method_flag==0)
     {
-      if(mess_flg==1) cout << "\n Initializing linear in x with " << npts << " points\n" << endl;
+      if(mess_flg==1) cout << "\n Initializing linear in x with " << npts 
+                           << " points\n" << endl;
     dx=(xm-x0)/(npts-1);
     // filling array    
     for(xarr[0]=x0, i=1; i<npts; i++) xarr[i]=xarr[i-1]+dx;
@@ -553,7 +620,8 @@ void init_xarr(double x0, double xm, double *xarr, int npts, int method_flag, in
     // log     
     if(method_flag==1)
     {
-    if(mess_flg==1) cout << "\n Initializing logarithmic in x with " << npts << " points\n" << endl;
+    if(mess_flg==1) cout << "\n Initializing logarithmic in x with " << npts 
+                         << " points\n" << endl;
     dx=pow(xm/x0, 1.0/(double)(npts-1));
     // filling array
     for(xarr[0]=x0, i=1; i<npts; i++) xarr[i]=xarr[i-1]*dx;
@@ -745,7 +813,8 @@ double find_root(double (* func)(double *), double x1, double x2, double xacc)
     
     f=func(&x1);
     fmid=func(&x2);
-    if (f*fmid >= 0.0){ cerr << " Root must be bracketed for bisection" << endl; return x2;}
+    if (f*fmid >= 0.0)
+    { cerr << " Root must be bracketed for bisection" << endl; return x2;}
     
     rtb = f < 0.0 ? (dx=x2-x1,x1) : (dx=x1-x2,x2);
     
@@ -772,7 +841,8 @@ double find_root_brent(double (* func)(double *), double x1, double x2, double x
     double a=x1,b=x2,c=x2,d=0.0,e=0.0 ,min1,min2;
     double fa=func(&a),fb=func(&b),fc,p,q,r,s,tol1,xm;
     
-    if (fa*fb >= 0.0){ cerr << " Root must be bracketed for bisection" << endl; return x2; }
+    if (fa*fb >= 0.0)
+    { cerr << " Root must be bracketed for bisection" << endl; return x2; }
     
     fc=fb;
     for (iter=0;iter<find_root_brent_ITMAX;iter++) {
@@ -837,7 +907,8 @@ double find_root_brent(double (* func)(double *), double x1, double x2, double x
 
 // Brent's method
 // xacc is relative accuracy
-double find_root_brent(double (* func)(double *, void *p), void *para, double x1, double x2, double xacc)
+double find_root_brent(double (* func)(double *, void *p), void *para, 
+                       double x1, double x2, double xacc)
 {
     const int find_root_brent_ITMAX=100;
     const double find_root_brent_EPS=1.0e-10;
@@ -846,7 +917,8 @@ double find_root_brent(double (* func)(double *, void *p), void *para, double x1
     double a=x1,b=x2,c=x2,d=0.0,e=0.0 ,min1,min2;
     double fa=func(&a, para),fb=func(&b, para),fc,p,q,r,s,tol1,xm;
     
-    if (fa*fb >= 0.0){ cerr << " Root must be bracketed for bisection" << endl; return x2; }
+    if (fa*fb >= 0.0)
+    { cerr << " Root must be bracketed for bisection" << endl; return x2; }
     
     fc=fb;
     for (iter=0;iter<find_root_brent_ITMAX;iter++) {
@@ -1042,5 +1114,5 @@ double DC_sumprod(const vector<double> &yarr, const vector<double> &zarr)
     return DC_sumprod(&yarr[0], &zarr[0], N)+DC_sumprod(&yarr[N], &zarr[N], M-N);
 }
 
-
-
+//======================================================================================
+//======================================================================================

@@ -4,32 +4,34 @@
 //
 //==================================================================================================
 //
-// purpose: computation of the SZ signal according to Chluba, Nagai, Sazonov, Nelson, 2012 
+// purpose: computation of the SZ signal according to Chluba, Nagai, Sazonov, Nelson, 2012
 //          and Chluba, Switzer, Nagai, Nelson, 2012.
-// 
+//
 // comments: - computations are performed in the single-scattering approximation
-//           - polarization effects are neglected   
+//           - polarization effects are neglected
 //           - the electron distribution function is assumed to be thermal
 //==================================================================================================
 //
 // Author: Jens Chluba (CITA, University of Toronto and Johns Hopkins University)
 //
 // first implementation: May  2012
-// last modification   : Dec  2012
+// last modification   : Aug  2017
 //
 //==================================================================================================
+// 28th Aug 2017: added y-weighted moment method for temperature corrections
+// 13th May 2015: improved performance of combo-means-methods && fixed bug for asymptotic derivative
 // 20th  Dec: added optimized SZ signal function to minimize number of temperature terms
-// 29th  Aug: added expansion of SZ signal around mean values of tau, TeSZ, and betac*muc with 
-//            higher moments included. 
+// 29th  Aug: added expansion of SZ signal around mean values of tau, TeSZ, and betac*muc with
+//            higher moments included.
 //  8th  Aug: added function to compute SZ null.
-//  6th  Aug: added expansion of SZ signal around mean values of tau, TeSZ, and betac*muc. 
+//  6th  Aug: added expansion of SZ signal around mean values of tau, TeSZ, and betac*muc.
 //  4th  Aug: added derivatives of basis functions in the CMB rest frame
-// 22th July: added combination of asymptotic expansion + CNSN basis functions. For Te < 2keV 
+// 22th July: added combination of asymptotic expansion + CNSN basis functions. For Te < 2keV
 //            the asymptotic expansion is used while for 2keV < Te < 75keV the basis of CNSN is
-//            applied. At 0.01 < x < 30 the precision should be similar to 0.001% for beta < 0.01. 
+//            applied. At 0.01 < x < 30 the precision should be similar to 0.001% for beta < 0.01.
 //            Also added simple sanity checks for approximation functions.
-// 10th July: added functions to compute the SZ signal using temperature-velocity moments. These   
-//            routines allow taking into account the detailed temperature and velocity structure   
+// 10th July: added functions to compute the SZ signal using temperature-velocity moments. These
+//            routines allow taking into account the detailed temperature and velocity structure
 //            of the cluster medium along the line-of-sight.
 //--------------------------------------------------------------------------------------------------
 
@@ -64,7 +66,7 @@
 
 using namespace std;
 
-const string SZpack_version="SZpack v1.1.1";
+const string SZpack_version="SZpack v1.1";
 
 //==================================================================================================
 // conversion factor x^3 Dn --> DI in MJy / sr
@@ -382,6 +384,39 @@ void compute_SZ_signal_combo_means_ex(vector<double> &xo,
                                       // variances
                                       double omega[3], double sigma[3], 
                                       double kappa, double betac2_perp);
+
+//==================================================================================================
+//
+// y-weighted moment expansion for up to O(The^4) for thSZ only. Using the definition
+// dy = (kTe / mec^2) dtau in the expressions below, we have the parameters
+//
+// y      : y     = int dy               [dimensionless]
+// TeSZ   : TeSZ  = y^-1 int Te dy       [keV  ]
+// TeSZ2  : TeSZ2 = y^-1 int Te^2 dy     [keV^2]
+// TeSZ3  : TeSZ3 = y^-1 int Te^3 dy     [keV^3]
+// TeSZ4  : TeSZ4 = y^-1 int Te^4 dy     [keV^4]
+//
+// The integrals have to be taken along the considered line-of-sight.
+//
+// [added 28.08.2017 JC]
+//==================================================================================================
+double compute_SZ_signal_combo_means_yw(double xo,
+                                        // mean parameters
+                                        double y, double TeSZ,
+                                        double TeSZ2, double TeSZ3, double TeSZ4);
+
+//--------------------------------------------------------------------------------------------------
+// vector versions (output is returned in xo-vector)
+//--------------------------------------------------------------------------------------------------
+void compute_SZ_signal_combo_means_yw(double *xo, int np,
+                                      // mean parameters
+                                      double y, double TeSZ,
+                                      double TeSZ2, double TeSZ3, double TeSZ4);
+
+void compute_SZ_signal_combo_means_yw(vector<double> &xo,
+                                      // mean parameters
+                                      double y, double TeSZ,
+                                      double TeSZ2, double TeSZ3, double TeSZ4);
 
 #endif
 
