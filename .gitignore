@@ -23,7 +23,7 @@ python/SZpack/__pycache__*
 python/*.pdf
 
 #ignore everything in outputs
-outputs/
+outputs/*
 *.agr
 *.eps
 
