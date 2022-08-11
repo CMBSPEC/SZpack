@@ -3,7 +3,7 @@
 run_SZpack
 run_SZ_moment_method
 run_multiple_scatt
-*.dat
+#*.dat
 
 #Python things
 python/SZpack/*.cpp
@@ -12,7 +12,8 @@ python/build*
 python/dist*
 python/SZpack.egg-info*
 python/__pycache__*
-python/*.ipynb*
+#python/*.ipynb*
+python/.ipynb*
 *.so
 
 python/SZpack/MultipoleKernel/*.cpp
@@ -23,7 +24,7 @@ python/SZpack/__pycache__*
 python/*.pdf
 
 #ignore everything in outputs
-#outputs/
+outputs/
 *.agr
 *.eps
 

@@ -1,7 +1,7 @@
 #============================================================================================
 # definitions
 #============================================================================================
-DEV_DIR = ./Development
+DEV_DIR = ./Tools
 
 MAKE_COMMAND = make -f Makefile.in
 
@@ -23,9 +23,8 @@ pub:
 pubtar:
 	make -f Makefile.pub tarball
 
-SZpack.py:
+pySZpack:
 	cd ./python; make;
-	cp ./python/SZpack.py .
 
 #============================================================================================
 # rules to clean up
@@ -42,12 +41,16 @@ cleanallDEV: cleanall
 	rm -f $(DEV_DIR)/Definitions/*.o $(DEV_DIR)/Definitions/*.~
 	rm -f $(DEV_DIR)/Simple_routines/*.o $(DEV_DIR)/Simple_routines/*.~
 	rm -f $(DEV_DIR)/Integration/*.o $(DEV_DIR)/Integration/*~
+	rm -f $(DEV_DIR)/Output/*.o $(DEV_DIR)/Output/*~
+	rm -f $(DEV_DIR)/Cosmology/*.o $(DEV_DIR)/Cosmology/*~
 
 cleanpy:
-	cd python; make clean;
-	rm -f SZpack.py*
+	cd ./python; make clean;
 
-tidy: cleanallDEV cleanpy
+cleanallpy:
+	cd ./python; make cleanall;
+
+tidy: cleanallDEV cleanallpy
 
 wipeDS:
 	find . -type f -name \.DS_Store -print | xargs rm

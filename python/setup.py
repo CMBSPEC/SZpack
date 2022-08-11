@@ -1,39 +1,38 @@
-#===================================================================================================
-#! /usr/bin/env python
-#===================================================================================================
+from glob import glob
+from os import path
+from setuptools import setup
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-# System imports
-from distutils.core import *
-from distutils      import sysconfig
+home = path.realpath("..")
 
-# Third-party modules - we depend on numpy for everything
-import numpy
+places = sorted(glob(path.join(home,"python/*.cpp"))+
+                glob(path.join(home,"python/MultipoleKernel/*.cpp"))+
+                glob(path.join(home,"StartUp/global_variables.cpp"))+
+                glob(path.join(home,"Tools/Cosmology/*.cpp"))+
+                glob(path.join(home,"Tools/Simple_routines/*.cpp"))+
+                glob(path.join(home,"Tools/Integration/*.cpp"))+
+                glob(path.join(home,"src/*.cpp"))+
+                glob(path.join(home,"SZpack.cpp")))
 
-# Obtain the numpy include directory.  This logic works across numpy versions.
-try:
-    numpy_include = numpy.get_include()
-except AttributeError:
-    numpy_include = numpy.get_numpy_include()
+dirs = [".", "..", "../include", "../src", "../src/database", "../src/database.opt", 
+        "../StartUp", "../Tools/Definitions", "../Tools/Cosmology", "../Tools/Integration", 
+        "../Tools/Simple_routines","/opt/local/include", "/usr/local/include"]
 
-# sz_wrap extension module
-_SZpack = Extension("_SZpack",
-                   ["SZpack.i","SZpack.python.cpp"],
-                   include_dirs = [numpy_include, "./.", "../.", "../include",
-                                   "/usr/local/include","/opt/local/include"],
-                   libraries = ['gsl', 'gslcblas', 'SZpack'],
-                   library_dirs=['./.','../.',"/usr/local/lib","/opt/local/lib"],
-                   extra_compile_args = ['-fPIC'],
-                   swig_opts=['-modern', '-I../include', '-c++']
-                   )
+ext_modules = [
+    Pybind11Extension(
+        "SZpack", places,
+        include_dirs=dirs,
+        libraries=['gsl', 'gslcblas'], language="c++",
+        library_dirs=["/opt/local/lib","/usr/local/lib"],
+        define_macros=[('UsePybind11', None)]
+    ),
+]
 
-# NumyTypemapTests setup
-setup(  name        = "SZpack functions",
+setup(  name        = "SZpack",
         description = "This package provides the main SZpack functions for Python",
-
-        author      = "E. Switzer & J. Chluba",
-        version     = "1.0",
-        ext_modules = [_SZpack]
-        )
-        
-#===================================================================================================
-#===================================================================================================
+        author      = "E. Switzer, J. Chluba & E. Lee",
+        version     = "2.0",
+        cmdclass={"build_ext": build_ext},
+        ext_modules=ext_modules,
+        zip_safe=False
+)

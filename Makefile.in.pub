@@ -57,7 +57,7 @@ OBJSDEV = $(DEV_DIR)/Simple_routines/Relativistic_MB.o \
           $(DEV_DIR)/Simple_routines/nPl_derivatives.o \
           $(DEV_DIR)/Simple_routines/routines.o \
           $(DEV_DIR)/Integration/Patterson.o \
-          $(DEV_DIR)/Integration/Integration_routines.GSL.o \
+          $(DEV_DIR)/Integration/Integration_routines.o \
           $(DEV_DIR)/Integration/Chebyshev_Int.o \
        
 OBJSLIB = $(SRC_DIR)/SZ_Integral.5D.o \

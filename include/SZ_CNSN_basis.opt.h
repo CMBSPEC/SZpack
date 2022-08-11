@@ -9,40 +9,118 @@
 //
 //==================================================================================================
 //
-// Author: Jens Chluba  (CITA, University of Toronto)
+// Author: Jens Chluba & Elizabeth Lee
 //
 // first implementation: July 2012
-// last modification   : July 2012
+// last modification   : February 2020
 //
 //==================================================================================================
+// 02/2020: Added Class structure
 
 #ifndef SZ_CNSN_BASIS_OPT_H
 #define SZ_CNSN_BASIS_OPT_H
 
 using namespace std;
 
+#include "physical_consts.h"
+#include "routines.h"
+#include "Relativistic_MB.h"
+#include "nPl_derivatives.h"
+#include "SZ_asymptotic.h"
+
+
+class CNSNoptSplineMembers{
+    public:
+    vector<int> Y, D, Q, Mcorr;
+    double The_ref;
+    bool loaded;
+
+    CNSNoptSplineMembers();
+
+    private:
+    void setup_expansion_splines(vector<int> &spline_mem_indices, const double D[][8]);
+
+    public:
+    void loadSplines(double refThe, const double dY[][8],const double dD[][8],const double dQ[][8],const double dMcorr[][8]);
+};
+
+//==================================================================================================
+
+class precision_settings {
+    private:
+    int length;
+
+    public:
+    int region, kmax;
+    vector<double> Te_regions;
+    vector<double> Te_pivots;
+    vector<int> pivot_indices;
+
+    private:
+    int get_pivot_index(int reg);
+    
+    public:
+    void initialise_settings(int maxk, int len, const vector<double> Tregions, const vector<double> Tpivots);
+    int determine_Te_region(double Te_max);
+};
 
 //==================================================================================================
 //
-// access basis functions and Normalization, etc. These functions are needed by the SZ moment 
-// method but are otherwise not too useful for general purpose applications.
+// SZ effect using interpolation of derivative terms
 //
 //==================================================================================================
-double N_func_CNSN(double The);
-void compute_Y_CNSN    (double x, int region, vector<double> &Y);
-void compute_M_CNSN_CMB(double x, int region, vector<double> &MCMB);
-void compute_D_CNSN_CMB(double x, int region, vector<double> &DCMB);
-void compute_Q_CNSN_CMB(double x, int region, vector<double> &QCMB);
 
-//==================================================================================================
-// computes the optimal value for kmax given the accuracy goal and required maximal temperature
-//==================================================================================================
-void determine_optimal_kmax(int accuracy_level, double Te_max, int &kmax, int &iregmax);
+class IntegralCNSNopt{
+    public:
+    vector<double> Y, D, Q, Mcorr;
+    precision_settings accuracy;
+    
+    private:
+    double betac, muc, The, x, xfac;
+    int kmax, Te_order, betac_order;
+    string run_mode;
+    bool CMBframe;
+    double x3, exp_mx, dex;
 
-vector<double> Get_temperature_regions(int kmax, int accuracy_level);
-vector<double> Get_temperature_pivots (int kmax, int accuracy_level);
-vector<int> Get_region_indices (int kmax, int accuracy_level);
+    int region, piv;
+    CNSNoptSplineMembers spline;
 
+    public:
+    IntegralCNSNopt();
+    IntegralCNSNopt(double xfac_i, double x_i, double The_i, double betac_i, double muc_i, int kmax_i, int accuracy_level, int betac_order_i, bool CMB);
+    IntegralCNSNopt(double x_i, double The_i, double betac_i, double muc_i, int kmax_i, int accuracy_level, int betac_order_i, bool CMB);
+    IntegralCNSNopt(int kmax, int accuracy_level); //For Accuracy settings only
+    IntegralCNSNopt(double x_i, int region, int Te_order_i); //for calculating the basis functions
+    IntegralCNSNopt(int k, Parameters fp, bool CMB);
+    void Update_x(double x_i);
+
+    private:
+    // Get reference to required accuracy setting
+    void getAccuracySettings(int kmax, int accuracy_level);
+
+    // generic function for interpolation (x^3 Dn was used). Outputs Dn
+    double Dn_SZ_splines(double The_ref, vector<int> &spline_mem);
+
+    // access basis functions and Normalization, etc. These functions are needed by the SZ moment 
+    // function to derive the Y, D, Q and Mcorr vectors as in asymptotic
+    void Compute_XX(double The_ref, vector<double> &XX, vector<int> &spline_mem);
+
+    void Compute_Y();
+    void Compute_D();
+    void Compute_Q();
+    void Compute_Mcorr();
+
+    double Calculate_monopole();
+    double Calculate_dipole();
+    double Calculate_quadrupole();
+    double Calculate_monopole_correction();
+
+    double Calculate_kinetic_correction();
+    double Calculate_All();
+
+    public:
+    double compute_distortion(string mode);
+};
 
 //==================================================================================================
 //
@@ -56,10 +134,28 @@ vector<int> Get_region_indices (int kmax, int accuracy_level);
 // mode == "kin"           --> only kinematic terms
 //
 //==================================================================================================
-double compute_SZ_distortion_CNSN_basis_opt(double x, 
-                                            double The, double betac, double muc, 
+double compute_SZ_distortion_CNSN_basis_opt(double x, double The, double betac, double muc, 
                                             int kmax, int betac_order,
-                                            string mode, int accuracy_level);
+                                            string mode, int accuracy_level, bool CMBframe = true);
+void compute_SZ_distortion_CNSN_basis_opt(vector<double> &Dn, vector<double> x,
+                                          double The, double betac, double muc, int kmax, int betac_order,
+                                          string mode, int accuracy_level, bool DI, bool CMBframe = true); 
+
+double compute_SZ_distortion_CNSN_basis_opt(int k, Parameters fp, bool CMBframe = true);
+void compute_SZ_distortion_CNSN_basis_opt(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe = true);
+
+//==================================================================================================
+// computes the optimal value for kmax given the accuracy goal and required maximal temperature
+//==================================================================================================
+void determine_optimal_kmax(int accuracy_level, double Te_max, int &kmax, int &iregmax);
+
+//==================================================================================================
+// access basis functions (always in CMB frame)
+//==================================================================================================
+void compute_Y_CNSNopt(double x, int region, vector<double> &Y);
+void compute_D_CNSNopt(double x, int region, vector<double> &D);
+void compute_Q_CNSNopt(double x, int region, vector<double> &Q);
+void compute_Mcorr_CNSNopt(double x, int region, vector<double> &Mcorr);
 
 #endif
 

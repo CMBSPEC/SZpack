@@ -52,9 +52,9 @@ SZ_cluster_profiles::~SZ_cluster_profiles(){}
 //==============================================================================================
 SZ_cluster_profiles::SZ_cluster_profiles(Cluster_param_Ne &pNe, Cluster_param_Te &pTe, string lab)
 {
-    SZpNe=pNe;
-    SZpTe=pTe;  
-    label=lab;
+    SZpNe = pNe;
+    SZpTe = pTe;  
+    label = lab;
 }
 
 //==============================================================================================

@@ -2,7 +2,8 @@
 # choose c++ compiler & flags
 #===============================================================================
 CC= g++
-CXXFLAGS = -Wall -pedantic -O2 -fPIC
+#CXXFLAGS = -Wall -pedantic -O2 -fPIC
+CXXFLAGS = -std=c++11 -Wall -pedantic -fPIC -fsanitize=undefined -O2
 
 #CC= icpc
 #CXXFLAGS = -Wall -O2 -fPIC
@@ -10,7 +11,8 @@ CXXFLAGS = -Wall -pedantic -O2 -fPIC
 #===============================================================================
 # linker flags
 #===============================================================================
-LXXFLAGS =
+#LXXFLAGS =
+LXXFLAGS = -fsanitize=undefined
 
 #===============================================================================
 # GSL lib
@@ -34,11 +36,12 @@ LIBSGSL      = -L$(GSL_LIB_PATH) -l$(GSL) -lgslcblas
 
 
 #===============================================================================
-# directory Development-libs
+# directory Tools-libs
 #===============================================================================
-DEV_DIR = ./Development
+DEV_DIR = ./Tools
 SRC_DIR = ./src
 INC_DIR = ./include
+Start_Dir = ./StartUp
 
 #===============================================================================
 # passing SZpack path on to the compiler
@@ -56,18 +59,22 @@ LIBS    = $(LIBSGSL) -lm
 OBJSDEV = $(DEV_DIR)/Simple_routines/Relativistic_MB.o \
           $(DEV_DIR)/Simple_routines/nPl_derivatives.o \
           $(DEV_DIR)/Simple_routines/routines.o \
+		  $(DEV_DIR)/Simple_routines/parser.o \
           $(DEV_DIR)/Integration/Patterson.o \
-          $(DEV_DIR)/Integration/Integration_routines.GSL.o \
+          $(DEV_DIR)/Integration/Integration_routines.o \
           $(DEV_DIR)/Integration/Chebyshev_Int.o \
+		  $(DEV_DIR)/Cosmology/Parameters.o \
+		  $(DEV_DIR)/Output/output.o 
        
 OBJSLIB = $(SRC_DIR)/SZ_Integral.5D.o \
           $(SRC_DIR)/SZ_Integral.3D.o \
+          $(SRC_DIR)/SZ_nonrelativistic.o \
           $(SRC_DIR)/SZ_asymptotic.o \
           $(SRC_DIR)/SZ_CNSN_basis.o \
           $(SRC_DIR)/SZ_CNSN_basis.opt.o 
-#          $(SRC_DIR)/SZ_cluster_profiles.o 
+
        
-OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o
+OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o 
 
 #===============================================================================
 # program 
@@ -94,6 +101,9 @@ SZpacklib: $(OBJS)
 INC_PATH = -I$(DEV_DIR)/Definitions \
 	   -I$(DEV_DIR)/Integration \
 	   -I$(DEV_DIR)/Simple_routines \
+	   -I$(DEV_DIR)/Cosmology \
+	   -I$(DEV_DIR)/Output \
+	   -I$(Start_Dir) \
 	   -I$(INC_DIR) \
 	   -I$(GSL_INC_PATH) -I.
 

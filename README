@@ -1,17 +1,21 @@
 //==================================================================================================
 //
-// SZpack version 1.1.1 (Sept 17th 2013)						   		            
+// SZpack version 2.0.0 (Aug 2021)						   		            
 //
 //==================================================================================================
 //
 // Author: J. Chluba (CITA, University of Toronto and Johns Hopkins University). Python tools were 
-//         developed by Eric R. Switzer (CITA).
+//         originally developed by Eric R. Switzer (CITA).
+//         Version 2.0.0 developed by E. Lee (JBCA, University of Manchester)
 //
 // All rights reserved. No guarantee for the correctness of the outputs is given!
 //
 //==================================================================================================
 //
-// REQUIREMENTS: GSL-library 1.13 or later (download at http://www.gnu.org/software/gsl/)
+// REQUIREMENTS: C++11 or later. 
+// GSL-library 1.13 or later (download at http://www.gnu.org/software/gsl/)
+// Python Wrapper: pybind11 (can be installed through pip or conda or other methods. instructions at 
+// https://pybind11.readthedocs.io/en/stable/installing.html)
 //
 //==================================================================================================
 
@@ -36,7 +40,7 @@
 //		Nozawa et al. ApJ, 1998 
 //      Nozawa et al. Nuovo Cimento B Series, 2006
 //
-// (iii) bugs will be immediately reported to Jens@Chluba.de
+// (iii) bugs will be immediately reported to Jens@Chluba.de TODO: Check what emails should go here
 //
 //==================================================================================================
 
@@ -52,7 +56,7 @@ line-of-sight can be included. Depending on the routine, calculations are carrie
 cluster frame or CMB rest frame. The SZ signal in the observer frame is then obtained by 
 Lorentz-transformation.
 
-At the moment the following approximations are made:
+At the moment the following approximations are generally made:
  
     - computations are performed in the single-scattering approximation
     - polarization effects are neglected
@@ -60,11 +64,19 @@ At the moment the following approximations are made:
     
 For details we refer to CNSN, 2012, arXiv:1205.5778 and CSNN, 2012, arXiv:1211.3206.
 
+A full documentation can be found at TODO: Write these : Scientific, python and c++
+
 //==================================================================================================
 
 
 //==================================================================================================
 
+Update (12.08.2021 | SZpack v2.0.0)
+
+    - large structural overhaul.
+    - python package reworked into a complete wrapper of the code.
+
+----------------------------------------------------------------------------------------------------
 Update (17.09.2013 | SZpack v1.1.1)
 
     - small updates of functions 
@@ -102,12 +114,14 @@ BASIC STRUCTURE:
 
 SZpack contains several routines that were developed at CITA (Spring 2012) with extensions developed
 both at CITA and JHU. The main (approved) functions of the library are defined in 'SZpack.h' and 
-'SZpack.cpp'. Python bindings are defined by 'SZpack.py'. Details of the functions and associated 
-parameters can be found there.
+'SZpack.cpp'. A large parameters structure can be found in 'Parameters.h' and 'Parameters.cpp'.
 
-./Development contains simple support functions like relativistic Maxwell-Boltzmann distribution 
+./Tools       contains simple support functions like relativistic Maxwell-Boltzmann distribution 
               or derivatives of a Planck function. Also integration routines and physical constants 
               can be found there.
+
+./Tools/Cosmology       contains the parameters structure which can be used to set the variables to 
+              use in any of our calculations.
               
 ./include 
 ./src         contains the main header and source files for the different SZ-routines
@@ -116,9 +130,8 @@ parameters can be found there.
 
 ./runfiles    some example runfile with parameters to call 'run_SZpack'
 
-./python      routines related to python part. Of particular interest is 'SZpack.python.h', which
-              contains the function definitions. For additional SZ python tools see 
-              https://github.com/eric-switzer/mcmc_tools
+./python      A full pybind11 python wrapper can be found here. A exploration of the python 
+              functionality can be found in PySZpack.ipynb.
 
 //==================================================================================================
 
@@ -140,12 +153,12 @@ To compile the code follow the following steps:
 (iii) type 'make' to compile the code. This creates the executable 'run_SZpack' and the 
       library 'libSZpack.a'
 
-(iv)  type 'make SZpack.py' to compile python bindings. This creates 'SZpack.py'. SWIG is needed to 
-      compile the 'SZpack.py'. Also, several SWIG specific warnings might appear, however, they did
-      not cause any problems. 
+(iv)  type 'make pySZpack' to compile the python wrapper. This installs a python package called 
+      'SZpack'. Pybind11 is needed to compile this. Some warnings may appear during compilation, but 
+      they can currently be ignored.
 
-To clean up type 'make clean' or 'make tidy', as well as 'make cleanall', 'make cleanallDEV' and
-'make cleanpy' (see 'Makefile' for difference)
+To clean up type 'make clean' or 'make tidy', as well as 'make cleanall', 'make cleanallDEV',
+'make cleanpy' and 'make cleanallpy' (see 'Makefile' for difference)
 
 //==================================================================================================
 
@@ -163,7 +176,7 @@ are used. Output will be generated in './outputs'. The files-names indicate the 
 Parameters used to compute the output are saved in the header of the file. There also a more 
 detailed description of the output can be found.
 
-Four different runmodes are available. These are
+Several different runmodes are available. These are
 
 '5D'     : full 5-dimensional collision integral is evaluated. Depending on the setting this takes
            some time. This routine is only recommended for testing and development.
@@ -216,13 +229,10 @@ ADDITIONAL COMMENTS:
 By default the kinematic corrections are treated by explicitly imposing Lorentz-invariance of 
 the scattering optical depth (see Chluba et al. 2012). However, SZpack allows changing to the 
 convention of Itoh et al, 1998 & Nozawa et al. 2006. This can be acheived by calling
-
-use_Nozawa2006_convention();
-
-prior to the execution of the main routines (see main-function in 'SZpack.cpp' for example).
+'setConvention(true);'
+prior to the execution of the main routines (see main-function in 'run_SZpack.cpp' for example).
 Similarly, the convention of Chluba et al. 2012 can be restored by calling
-
-use_CNSN_convention();
+'setConvention(false);'
 
 Similarly, the main routines residing in './src' have additional features that can be activated or
 changed. We refer the user to the header and source files of these different routines.
