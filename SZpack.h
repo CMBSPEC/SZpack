@@ -63,6 +63,7 @@
 #include "SZ_asymptotic.h"
 #include "SZ_CNSN_basis.h"
 #include "SZ_CNSN_basis.opt.h"
+#include "SZ_Integral_multiple.h"
 
 using namespace std;
 
