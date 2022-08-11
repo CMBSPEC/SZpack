@@ -1,0 +1,106 @@
+#===============================================================================
+# choose c++ compiler & flags
+#===============================================================================
+CC= g++
+CXXFLAGS = -Wall -pedantic -O2 -fPIC
+
+#CC= icpc
+#CXXFLAGS = -Wall -O2 -fPIC
+
+#===============================================================================
+# linker flags
+#===============================================================================
+LXXFLAGS =
+
+#===============================================================================
+# GSL lib
+#===============================================================================
+GSL          = gsl
+GSL_INC_PATH = /usr/local/include/
+GSL_LIB_PATH = /usr/local/lib/
+#GSL_INC_PATH = /opt/local/include/
+#GSL_LIB_PATH = /opt/local/lib/
+LIBSGSL      = -L$(GSL_LIB_PATH) -l$(GSL) -lgslcblas
+
+#===============================================================================
+#===============================================================================
+#===============================================================================
+#
+# below normally no changes should be necessary...
+#
+#===============================================================================
+#===============================================================================
+#===============================================================================
+
+
+#===============================================================================
+# directory Development-libs
+#===============================================================================
+DEV_DIR = ./Development
+SRC_DIR = ./src
+INC_DIR = ./include
+
+#===============================================================================
+# passing SZpack path on to the compiler
+#===============================================================================
+CXXFLAGSLOC = $(CXXFLAGS) -D SZPACKPATH=\"$(PWD)/\"
+
+#===============================================================================
+# Required external libs
+#===============================================================================
+LIBS    = $(LIBSGSL) -lm
+
+#===============================================================================
+# object files
+#===============================================================================
+OBJSDEV = $(DEV_DIR)/Simple_routines/Relativistic_MB.o \
+          $(DEV_DIR)/Simple_routines/nPl_derivatives.o \
+          $(DEV_DIR)/Simple_routines/routines.o \
+          $(DEV_DIR)/Integration/Patterson.o \
+          $(DEV_DIR)/Integration/Integration_routines.GSL.o \
+          $(DEV_DIR)/Integration/Chebyshev_Int.o \
+       
+OBJSLIB = $(SRC_DIR)/SZ_Integral.5D.o \
+          $(SRC_DIR)/SZ_Integral.3D.o \
+          $(SRC_DIR)/SZ_asymptotic.o \
+          $(SRC_DIR)/SZ_CNSN_basis.o \
+          $(SRC_DIR)/SZ_CNSN_basis.opt.o
+
+OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o
+
+#===============================================================================
+# program 
+#===============================================================================
+
+all: lib bin
+
+bin: run_SZpack
+
+lib: SZpacklib
+
+run_SZpack:  $(OBJS) run_SZpack.o
+	   @echo "\n Linking run_SZpack binary\n"
+	   $(CC) $(LXXFLAGS) $(OBJS) run_SZpack.o $(LIBS) -o run_SZpack
+
+SZpacklib: $(OBJS)
+	   @echo "\n Creating SZpack library\n"
+	   ar rvs ./libSZpack.a $?
+	     
+#===============================================================================
+# rules
+#===============================================================================
+
+INC_PATH = -I$(DEV_DIR)/Definitions \
+	   -I$(DEV_DIR)/Integration \
+	   -I$(DEV_DIR)/Simple_routines \
+	   -I$(INC_DIR) \
+	   -I$(GSL_INC_PATH) -I.
+
+.cpp.o:
+	   @echo "Producing object-file $@"
+	   $(CC) $(CXXFLAGSLOC) $(INC_PATH) -c $< -o $@
+
+libSZpack.a:
+	   make lib;
+
+#===============================================================================
