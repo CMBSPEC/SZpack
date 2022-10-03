@@ -13,6 +13,7 @@ void init_ex_CNSN(py::module_ &);
 void init_ex_3d(py::module_ &);
 void init_ex_5d(py::module_ &);
 void init_ex_nonrel(py::module_ &);
+void init_ex_nT_asym(py::module_ &);
 
 PYBIND11_MODULE(SZpack, m) {
     m.doc() = "The python wrapper for SZpack.";
@@ -214,4 +215,7 @@ PYBIND11_MODULE(SZpack, m) {
     init_ex_5d(int5d);
     py::module nonrel = m.def_submodule("Nonrelativistic", "The submodule for some specific nonrelativistic method functions.");
     init_ex_nonrel(nonrel);
+    py::module nTasym = m.def_submodule("nT_asymptotic", "An extension submodule to calculate the SZ signal for user defined background photon "
+        "distributions, i.e., alternatives to the CMB backlight. (See Lee et al. 2021 for more details.)");
+    init_ex_nT_asym(nTasym);
 }
