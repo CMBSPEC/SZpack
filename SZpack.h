@@ -66,6 +66,7 @@
 #include "SZ_CNSN_basis.opt.h"
 //#include "SZ_Integral.Kernel.h"
 #include "SZ_nonrelativistic.h"
+#include "SZ_Integral_multiple.h"
 
 using namespace std;
 

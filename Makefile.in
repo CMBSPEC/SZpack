@@ -72,8 +72,10 @@ OBJSLIB = $(SRC_DIR)/SZ_Integral.5D.o \
           $(SRC_DIR)/SZ_asymptotic.o \
           $(SRC_DIR)/SZ_CNSN_basis.o \
           $(SRC_DIR)/SZ_CNSN_basis.opt.o \
-          $(SRC_DIR)/SZ_nT_asymptotic.o 
-
+          $(SRC_DIR)/SZ_nT_asymptotic.o \
+          $(SRC_DIR)/SZ_cluster_profiles.o \
+          $(SRC_DIR)/SZ_Integral_multiple.o \
+          $(SRC_DIR)/SZ_moment_method.o
        
 OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o 
 
@@ -83,13 +85,21 @@ OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o
 
 all: lib bin
 
-bin: run_SZpack
+bin: run_SZpack run_SZ_moment_method run_multiple_scatt
 
 lib: SZpacklib
 
 run_SZpack:  $(OBJS) run_SZpack.o
 	   @echo "\n Linking run_SZpack binary\n"
 	   $(CC) $(LXXFLAGS) $(OBJS) run_SZpack.o $(LIBS) -o run_SZpack
+
+run_SZ_moment_method:  $(OBJS) run_SZ_moment_method.o
+	   @echo "\n Linking run_SZ_moment_method binary\n"
+	   $(CC) $(LXXFLAGS) $(OBJS) run_SZ_moment_method.o $(LIBS) -o run_SZ_moment_method
+
+run_multiple_scatt:  $(OBJS) run_multiple_scatt.o
+	   @echo "\n Linking run_multiple_scatt binary\n"
+	   $(CC) $(LXXFLAGS) $(OBJS) run_multiple_scatt.o $(LIBS) -o run_multiple_scatt
 
 SZpacklib: $(OBJS)
 	   @echo "\n Creating SZpack library\n"
