@@ -71,7 +71,8 @@ OBJSLIB = $(SRC_DIR)/SZ_Integral.5D.o \
           $(SRC_DIR)/SZ_nonrelativistic.o \
           $(SRC_DIR)/SZ_asymptotic.o \
           $(SRC_DIR)/SZ_CNSN_basis.o \
-          $(SRC_DIR)/SZ_CNSN_basis.opt.o 
+          $(SRC_DIR)/SZ_CNSN_basis.opt.o \
+          $(SRC_DIR)/SZ_nT_asymptotic.o 
 
        
 OBJS = $(OBJSDEV) $(OBJSLIB) SZpack.o 
