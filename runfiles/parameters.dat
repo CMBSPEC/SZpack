@@ -1,0 +1,39 @@
+#####################################################################
+#  A Sample Parameter File 
+#####################################################################
+# Lines beginning with # are ignored by parser
+# As is anything on a line beyond a #
+# Parser currently searches for these variable names.
+# For entries of the form 'id-string = entry entry2' the read 
+# functions currently only account for the first entry.
+# if any entry is omitted a default value is supplied
+#####################################################################
+
+
+xmin = 0.1                  # (>=0.1)
+xmax = 30.0                 # (<=50.0)
+gridpoints = 50             # number of points for the log-frequency grid (>=2)
+    
+Dtau = 0.01                 # optical depth >0
+Te = 10.0                   # electron temperature in keV
+
+betac = 0.01                # peculiar velocity of cluster with respect to CMB frame (betac = v/c)
+muc = 1.0                   # direction cosine of the cluster velocity with respect to the line-of-sight in the CMB rest frame
+betao = 0.001241            # peculiar velocity of observer with respect to CMB frame (betao = v/c)
+muo = 0.0                   # direction cosine for the line-of-sight with respect to the observers velocity. The angle is measured in the observer frame
+
+#####################################################################
+
+T_order = 10                # Temperature order (for CNSN and Asymptotic modes)
+beta_order = 2              # beta order (for CNSN and Asymptotic modes)
+relative_accuracy = 1.0e-4  # relative accuracy for numerical integral (only for "5D" and "3D" runmode)
+   
+#####################################################################
+
+kmax = 4                    # kmax (only for 'CNSNopt' mode; depends on accuracy_level; see Table 1 of CSNN2012)
+accuracy_level = 2          # accuracy_level (0, 1, 2, 3; only for 'CNSNopt' runmode)
+
+#####################################################################
+
+outputPath = ./outputs/     # path for output
+fileEnding = .dat           # addition to name of files at the very end

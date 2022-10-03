@@ -10,42 +10,19 @@
 //
 //==================================================================================================
 //
-// Author: Jens Chluba  (CITA, University of Toronto)
+// Author: Jens Chluba & Elizabeth Lee
 //
 // first implementation: April 2012
-// last modification   : May   2015
+// last modification   : February 2020
 //
 //==================================================================================================
 // 13th May  2015: fixed bug in 'Dn_dbeta_para_asymptotic_CMB' for betapara==0
 // 12th Sept 2013: fixed bug for negative beta_para (thanks to John ZuHone & Tony Mroczkowski)
 //  4st  Aug 2012: added derivatives of basis functions in the CMB rest frame
 // 10th July 2012: added basis functions in the CMB rest frame
+// 02/2020: Added Class structure
 
-//==================================================================================================
-// Standards
-//==================================================================================================
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <ctime>
-#include <iomanip>
-#include <cmath>
-#include <limits.h>
-#include <vector>
-
-//==================================================================================================
-// required libs
-//==================================================================================================
-#include "physical_consts.h"
-#include "routines.h"
-#include "nPl_derivatives.h"
 #include "SZ_asymptotic.h"
-
-//==================================================================================================
-// namespace
-//==================================================================================================
-using namespace std;
 
 //==================================================================================================
 //
@@ -231,355 +208,320 @@ const double q20[11][23]={
 //
 //==================================================================================================
 
-//==================================================================================================
-// th-SZ
-//==================================================================================================
-void compute_Y(double x, vector<double> &Yk)
+IntegralAsymptotic::IntegralAsymptotic(double xfac_i, double x_i, double The_i, double betac_i, double muc_i, int Te_order_i, int betac_order_i, bool CMB){
+    xfac = xfac_i;
+    x = xfac*x_i;
+    The = The_i;
+    betac = betac_i;
+    muc = muc_i;
+    CMBframe = CMB;
+    Te_order = Te_order_i;
+    betac_order = betac_order_i;
+
+    // These are only used in the dcompute methods
+    beta_perp=betac*sqrt(1.0-muc*muc);
+    beta_para=betac*muc;
+    
+    Calculate_shared_variables();
+
+    Compute_Y();
+    Compute_D();
+    Compute_Q();
+    Compute_Mcorr();
+}
+
+IntegralAsymptotic::IntegralAsymptotic(double x_i, double The_i, double betac_i, double muc_i, int Te_order_i, int betac_order_i, bool CMB)
+    : IntegralAsymptotic(1.0, x_i, The_i, betac_i, muc_i, Te_order_i, betac_order_i, CMB) {}
+
+IntegralAsymptotic::IntegralAsymptotic()
+    : IntegralAsymptotic(0.0, 1.0, 0.0, 0.0, 10, 2, false) {}
+
+IntegralAsymptotic::IntegralAsymptotic(double x_i, double The_i, double betac_i, double muc_i, bool CMB)
+    : IntegralAsymptotic(x_i, The_i, betac_i, muc_i, 10, 2, CMB) {}
+
+IntegralAsymptotic::IntegralAsymptotic(double x_i, bool CMB)
+    : IntegralAsymptotic(x_i, 1.0, 0.0, 0.0, 10, 2, CMB) {}
+
+IntegralAsymptotic::IntegralAsymptotic(int k, Parameters fp, bool CMB, bool inputOrders) 
+    : IntegralAsymptotic((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0), fp.xcmb[k], fp.calc.The, fp.betac, 
+                          CMB ? fp.muc : fp.calc.mucc, inputOrders ? fp.T_order : 10, inputOrders ? fp.beta_order : 2, CMB) {}
+
+void IntegralAsymptotic::Update_x(double x_i){
+    x = xfac*x_i;
+
+    Calculate_shared_variables();
+
+    Compute_Y();
+    Compute_D();
+    Compute_Q();
+    Compute_Mcorr();
+}
+
+void IntegralAsymptotic::Calculate_shared_variables(){
+    exp_mx=exp(-x);
+    dex=one_minus_exp_mx(x, exp_mx);
+    fac=(-x)/dex;
+    nPl=exp_mx/dex;
+
+    Y.resize(Te_order+1);
+    D.resize(Te_order+1);
+    Q.resize(Te_order+1);
+    Mcorr.resize(Te_order+1);
+
+    beta.resize(2*Te_order+6);
+    Pk.resize(2*Te_order+5);
+    for (int k=0; k< 2*Te_order+5; k++) Pk[k]=Pfunc(k, x);
+}
+
+void IntegralAsymptotic::Compute_Y()
 {
-    int ymax=Yk.size()-1;
-    vector<double> Pk(2*(ymax+1)+1), beta(2*(ymax+1)+2);
-    
-    for(int k=0; k<=2*(ymax+1); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
+    for(int k=0; k<=Te_order; k++)
     {
         int kmax=2*(k+1);
         beta[kmax+1]=0.0;
         
         for(int l=kmax; l>=1; l--) beta[l]=fac*(a00[k][l]*Pk[l]+beta[l+1]);
         
-        Yk[k]=nPl*beta[1];
+        Y[k]=nPl*beta[1];
     }
-    
-    return;
 }
 
-//==================================================================================================
-// kinematic correction to monopole
-//==================================================================================================
-void compute_Ykin(double x, vector<double> &Ykin)
+void IntegralAsymptotic::Compute_D()
 {
-    int ymax=Ykin.size()-1;
-    vector<double> Pk(2*(ymax+2)+1), beta(2*(ymax+2)+2);
-    
-    for(int k=0; k<=2*(ymax+2); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
+    for(int k=0; k<=Te_order; k++)
     {
         int kmax=2*(k+1);
         beta[kmax+1]=0.0;
         
-        for(int l=kmax; l>=1; l--)
+        for(int l=kmax; l>=0; l--)
         {
-            beta[l]=a00[k][l]*( Pk[l]*l*(l+2.0)+fac*(Pk[l+1]*(2.0*l+3.0)+fac*Pk[l+2]) );
-            beta[l]=fac*(beta[l]+beta[l+1]);
+            beta[l]= CMBframe ? (d10[k][l]-a00[k][l]) : d10[k][l];
+            beta[l]*=( Pk[l]*l+fac*Pk[l+1] );
+            beta[l]= fac*(beta[l]+beta[l+1]);
         }
         
-        Ykin[k]=nPl*beta[1]/6.0;
+        D[k]=nPl*beta[0]/fac;
     }
-    
-    return;
 }
 
-//==================================================================================================
-// kinematic correction to monopole in CMB frame (added 10.07 by JC)
-//==================================================================================================
-void compute_M_CMB(double x, vector<double> &Ykin)
+void IntegralAsymptotic::Compute_Q()
 {
-    int ymax=Ykin.size()-1;
-    vector<double> Pk(2*(ymax+2)+1), beta(2*(ymax+2)+2);
-    
-    for(int k=0; k<=2*(ymax+2); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
+    for(int k=0; k<=Te_order; k++)
     {
         int kmax=2*(k+1);
         beta[kmax+1]=0.0;
         
-        for(int l=kmax; l>=1; l--)
+        for(int l=kmax; l>=0; l--)
         {
-            beta[l]=(a00[k][l]-d10[k][l])*( Pk[l]*l*(l+2.0)+fac*(Pk[l+1]*(2.0*l+3.0)+fac*Pk[l+2]) );
-            beta[l]=fac*(beta[l]+beta[l+1]);
+            beta[l]= CMBframe ? (q20[k][l]+a00[k][l]-2.0*d10[k][l]) : q20[k][l];
+            beta[l]*=( Pk[l]*l*(l-1.0)+fac*(2.0*l*Pk[l+1]+fac*Pk[l+2]) );
+            beta[l]= fac*(beta[l]+beta[l+1]);
         }
         
-        Ykin[k]=nPl*( beta[1]-d10[k][0]*fac*(Pk[1]*3.0+fac*Pk[2]) )/3.0;
+        Q[k] = nPl*beta[0]/3.0/fac;
     }
-    
-    return;
 }
 
-//==================================================================================================
-// kinematic correction to dipole
-//==================================================================================================
-void compute_Dkin(double x, vector<double> &Dkin)
+void IntegralAsymptotic::Compute_Mcorr()
 {
-    int ymax=Dkin.size()-1;
-    vector<double> Pk(2*(ymax+2)+1), beta(2*(ymax+2)+2);
-    
-    for(int k=0; k<=2*(ymax+2); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
+    for(int k=0; k<=Te_order; k++)
     {
         int kmax=2*(k+1);
         beta[kmax+1]=0.0;
         
-        for(int l=kmax; l>=1; l--)
+        for(int l=kmax; l>=0; l--)
         {
-            beta[l]=d10[k][l]*( Pk[l]*l+fac*Pk[l+1] );
-            beta[l]=fac*(beta[l]+beta[l+1]);
+            beta[l]= CMBframe ? (a00[k][l]-d10[k][l]) : a00[k][l];
+            beta[l]*=(Pk[l]*l*(l+2.0)+fac*(Pk[l+1]*(2.0*l+3.0)+fac*Pk[l+2]));
+            beta[l]= fac*(beta[l]+beta[l+1]);
         }
         
-        Dkin[k]=nPl*(beta[1]+d10[k][0]*fac*Pk[1]);
+        Mcorr[k]= CMBframe ? 1/3.0 : 1/6.0;
+        Mcorr[k]*=nPl*beta[0]/fac;
     }
-    
-    return;
 }
 
-//==================================================================================================
-// kinematic correction to dipole in CMB frame (added 10.07 by JC)
-//==================================================================================================
-void compute_D_CMB(double x, vector<double> &Dkin)
-{
-    int ymax=Dkin.size()-1;
-    vector<double> Pk(2*(ymax+2)+1), beta(2*(ymax+2)+2);
-    
-    for(int k=0; k<=2*(ymax+2); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
-    {
-        int kmax=2*(k+1);
-        beta[kmax+1]=0.0;
-        
-        for(int l=kmax; l>=1; l--)
-        {
-            beta[l]=(d10[k][l]-a00[k][l])*( Pk[l]*l+fac*Pk[l+1] );
-            beta[l]=fac*(beta[l]+beta[l+1]);
-        }
-        
-        Dkin[k]=nPl*(beta[1]+d10[k][0]*fac*Pk[1]);
-    }
-    
-    return;
-}
-
-//==================================================================================================
-// kinematic correction to quadrupole
-//==================================================================================================
-void compute_Qkin(double x, vector<double> &Qkin)
-{
-    int ymax=Qkin.size()-1;
-    vector<double> Pk(2*(ymax+2)+1), beta(2*(ymax+2)+2);
-    
-    for(int k=0; k<=2*(ymax+2); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
-    {
-        int kmax=2*(k+1);
-        beta[kmax+1]=0.0;
-        
-        for(int l=kmax; l>=1; l--)
-        {
-            beta[l]=q20[k][l]*( Pk[l]*l*(l-1.0)+fac*(2.0*l*Pk[l+1]+fac*Pk[l+2]) );
-            beta[l]=fac*(beta[l]+beta[l+1]);
-        }
-        
-        Qkin[k]=nPl*(beta[1]+q20[k][0]*fac*fac*Pk[2])/3.0;
-    }
-    
-    return;
-}
-
-//==================================================================================================
-// kinematic correction to quadrupole in CMB frame (added 10.07 by JC)
-//==================================================================================================
-void compute_Q_CMB(double x, vector<double> &Qkin)
-{
-    int ymax=Qkin.size()-1;
-    vector<double> Pk(2*(ymax+2)+1), beta(2*(ymax+2)+2);
-    
-    for(int k=0; k<=2*(ymax+2); k++) Pk[k]=Pfunc(k, x);
-    
-    double exp_mx=exp(-x);
-    double fac=(-x)/(1.0-exp_mx);
-    double nPl=exp_mx/(1.0-exp_mx);
-    
-    for(int k=0; k<=ymax; k++)
-    {
-        int kmax=2*(k+1);
-        beta[kmax+1]=0.0;
-        
-        for(int l=kmax; l>=1; l--)
-        {
-            beta[l]=(q20[k][l]+a00[k][l]-2.0*d10[k][l])
-                                 *( Pk[l]*l*(l-1.0)+fac*(2.0*l*Pk[l+1]+fac*Pk[l+2]) );
-            beta[l]=fac*(beta[l]+beta[l+1]);
-        }
-        
-        Qkin[k]=nPl*(beta[1]+(q20[k][0]-2.0*d10[k][0])*fac*fac*Pk[2])/3.0;
-    }
-    
-    return;
-}
-
-//==================================================================================================
-//
 // approximation for relativistic SZ effect
-//
-//==================================================================================================
 // const temperature case y^(k)= Theta^k tau_e
-//==================================================================================================
-double Dn_thSZ_appr(double x, double Theta, int max_order)
-{
-    vector<double> Yk(max_order);
-    compute_Y(x, Yk);
-    
-    double r=Theta*Yk[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Yk[k]);
-    
+double IntegralAsymptotic::Calculate_monopole(){
+    double r=The*Y[Te_order];
+    for(int k=Te_order-1; k>=0; k--) {r=The*(r+Y[k]);}
     return r;
 }
 
-//==================================================================================================
-double Dn_kSZ_appr1(double x, double Theta, double betac, double muc, int max_order)
-{
-    // normal k-SZ effect
-    double rnorm=x*exp(-x)/(1.0-exp(-x))/(1.0-exp(-x));
+double IntegralAsymptotic::Calculate_dipole(){
+    if(betac_order < 1) return 0.0;
+    double rnorm=x*exp_mx/dex/dex;
 
-    if(max_order==0) return betac*muc*rnorm;
+    if(Te_order==0) {return betac*muc*rnorm;}
     
-    vector<double> Dkin(max_order);
-    compute_Dkin(x, Dkin);
-    
-    double r=Theta*Dkin[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Dkin[k]);
-    
-    // normal k-SZ effect
+    double r=The*D[Te_order];
+    for(int k=Te_order-1; k>=0; k--) {r=The*(r+D[k]);}
     r+=rnorm;
-    
     return r*betac*muc;
 }
 
-//==================================================================================================
-double Dn_kSZ_appr2(double x, double Theta, double betac, double muc, int max_order)
-{
-    // quadratic k-SZ effect
-    double rnorm=-3.0/10.0*x*exp(-x)/(1.0-exp(-x))/(1.0-exp(-x))*x*(1.0+exp(-x))/(1.0-exp(-x));
-    
-    if(max_order==0) return betac*betac*(1.5*muc*muc-0.5)*rnorm;
+double IntegralAsymptotic::Calculate_quadrupole(){
+    if(betac_order < 2) return 0.0;
+    double rnorm = CMBframe ? 11.0/30.0 : -3.0/10.0;
+    rnorm *= x*exp_mx/dex/dex*x*(1.0+exp_mx)/dex;
 
-    vector<double> Qkin(max_order);
-    compute_Qkin(x, Qkin);
+    if(Te_order==0) {return betac*betac*(1.5*muc*muc-0.5)*rnorm;}
     
-    double r=Theta*Qkin[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Qkin[k]);
-    
-    // second order k-SZ effect
+    double r=The*Q[Te_order];
+    for(int k=Te_order-1; k>=0; k--) {r=The*(r+Q[k]);}
     r+=rnorm;
-
     return r*betac*betac*(1.5*muc*muc-0.5);
 }
 
-//==================================================================================================
-double Dn_kSZ_appr2m(double x, double Theta, double betac, int max_order)
-{
-    if(max_order==0) return 0.0;
+double IntegralAsymptotic::Calculate_monopole_correction(){
+    if(betac_order < 2) return 0.0;
+    double rnorm = CMBframe ? x*exp_mx/dex/dex*(x*(1.0+exp_mx)/dex-3.0)/3.0 : 0.0;
+
+    if(Te_order==0) {return betac*betac*rnorm;}
     
-    vector<double> Ykin(max_order);
-    compute_Ykin(x, Ykin);
-    
-    double r=Theta*Ykin[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Ykin[k]);
-    
+    double r=The*Mcorr[Te_order];
+    for(int k=Te_order-1; k>=0; k--) {r=The*(r+Mcorr[k]);}
+    r+=rnorm;
     return r*betac*betac;
 }
 
-//==================================================================================================
-//
-// approximation for relativistic SZ effect for CMB rest frame terms (added 10.07 by JC)
-//
-//==================================================================================================
-double Dn_kSZ_appr1_CMB(double x, double Theta, double betac, double muc, int max_order)
-{
-    // normal k-SZ effect
-    double rnorm=x*exp(-x)/(1.0-exp(-x))/(1.0-exp(-x));
+double IntegralAsymptotic::Calculate_kinetic_correction(){
+    return Calculate_dipole()+Calculate_quadrupole()+Calculate_monopole_correction();
+}
 
-    if(max_order==0) return betac*muc*rnorm;
+double IntegralAsymptotic::Calculate_All(){
+    return Calculate_kinetic_correction()+Calculate_monopole();
+}
+
+// analytic derivatives in betac_parallel and betac_perp
+// Note since betac muc = beta_para, betac^2 P_2(muc) == beta_para^2 - 0.5*beta_perp^2
+// These are all calculated assuming betac = muc = 1.
+double IntegralAsymptotic::Dn_for_The(){
+    double Dn_th  = Calculate_monopole();
+    double Dn_k1  = beta_para*Calculate_dipole();
+    double Dn_k2  = (beta_para*beta_para - 0.5*beta_perp*beta_perp)*Calculate_quadrupole(); 
+    double Dn_k2m = (beta_para*beta_para + beta_perp*beta_perp)*Calculate_monopole_correction();
     
-    vector<double> Dkin(max_order);
-    compute_D_CMB(x, Dkin);
+    return Dn_th+Dn_k1+Dn_k2+Dn_k2m;
+}
+
+double IntegralAsymptotic::Dn_dbeta_para(){
+    double Dn_k1  = Calculate_dipole();
+    double Dn_k2  = 2.0*beta_para*Calculate_quadrupole();
+    double Dn_k2m = 2.0*beta_para*Calculate_monopole_correction();
     
-    double r=Theta*Dkin[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Dkin[k]);
+    return Dn_k1+Dn_k2+Dn_k2m;
+}
+
+double IntegralAsymptotic::Dn_d2beta_para(){
+    double Dn_k2  = Calculate_quadrupole(); 
+    double Dn_k2m = Calculate_monopole_correction(); 
     
-    // normal k-SZ effect
-    r+=rnorm;
+    return Dn_k2+Dn_k2m;
+}
+
+double IntegralAsymptotic::Dn_dbeta2_perp(){
+    double Dn_k2  = -0.5*Calculate_quadrupole();
+    double Dn_k2m = Calculate_monopole_correction(); 
     
-    return r*betac*muc;
+    return Dn_k2+Dn_k2m;
 }
 
 //==================================================================================================
-double Dn_kSZ_appr2_CMB(double x, double Theta, double betac, double muc, int max_order)
-{
-    // quadratic k-SZ effect
-    double rnorm=11.0/30.0*x*exp(-x)/(1.0-exp(-x))/(1.0-exp(-x))*x*(1.0+exp(-x))/(1.0-exp(-x));
+void IntegralAsymptotic::compute_all_Te_derivatives_upto_dThe(int dThe, std::function<double()> f){
+    double d0, dp, dm, dp2, dm2;
+    double eps=0.01;
+    
+    double The_fid = The;
+    Te_order = 10;
+    betac_order = 2;
+    betac = muc = 1.0;
+    
+    dDn_dThe.resize(dThe+1);
+    d0=f();
+    dDn_dThe[0]=d0;
+    
+    if(dThe>0){
+        The = The_fid*(1.0+eps);
+        dp = f();
+        The = The_fid*(1.0-eps);
+        dm = f();
+        The = The_fid*(1.0+2*eps);
+        dp2= f();
+        The = The_fid*(1.0-2*eps);
+        dm2= f();
+        The = The_fid;
+        
+        dDn_dThe[1]=(-dp2+8.0*dp-8.0*dm+dm2)/12.0/eps;
 
-    if(max_order==0) return betac*betac*(1.5*muc*muc-0.5)*rnorm;
-    
-    vector<double> Qkin(max_order);
-    compute_Q_CMB(x, Qkin);
-    
-    double r=Theta*Qkin[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Qkin[k]);
-    
-    // second order k-SZ effect
-    r+=rnorm;
-    
-    return r*betac*betac*(1.5*muc*muc-0.5);
+        if(dThe>1){
+            dDn_dThe[2]=(-dp2+16.0*dp-30.0*d0+16.0*dm-dm2)/12.0/pow(eps, 2) / (2.0);
+
+            if(dThe>2){
+                dDn_dThe[3]=(dp2-2.0*dp+2.0*dm-dm2)/2.0/pow(eps, 3) / (6.0);
+            
+                if(dThe>3){
+                    dDn_dThe[4]=(dp2-4.0*dp+6.0*d0-4.0*dm+dm2)/pow(eps, 4) / (24.0);
+                }
+            }
+        }
+    }
 }
 
-//==================================================================================================
-double Dn_kSZ_appr2m_CMB(double x, double Theta, double betac, int max_order)
-{
-    // quadratic k-SZ effect on monopole
-    double rnorm=x*exp(-x)/(1.0-exp(-x))/(1.0-exp(-x))*(x*(1.0+exp(-x))/(1.0-exp(-x))-3.0)/3.0;
+double IntegralAsymptotic::compute_distortion(string mode){
+    run_mode="all";
+    if(mode=="monopole" || mode=="dipole" || mode=="quadrupole" || mode=="monopole_corr" ||mode=="kin"){
+        run_mode = mode;
+    }
 
-    if(max_order==0) return betac*betac*rnorm;
-    
-    vector<double> Ykin(max_order);
-    compute_M_CMB(x, Ykin);
-    
-    double r=Theta*Ykin[max_order-1];
-    for(int k=max_order-2; k>=0; k--) r=Theta*(r+Ykin[k]);
-
-    // second order k-SZ effect on monopole
-    r+=rnorm;
-
-    return r*betac*betac;
+    if(run_mode=="monopole"){
+        return Calculate_monopole();
+    } 
+    else if(run_mode=="dipole"){ 
+        return Calculate_dipole();
+    }
+    else if(run_mode=="quadrupole"){
+        return Calculate_quadrupole();
+    }
+    else if(run_mode=="monopole_corr"){ 
+        return Calculate_monopole_correction();
+    }
+    else if(run_mode=="kin"){
+        return Calculate_kinetic_correction();
+    }
+    else{
+        return Calculate_All();
+    }
 }
+
+void IntegralAsymptotic::Dcompute_distortion(int dThe, int dbeta_para, int dbeta2_perp, vector<double> &dDn){
+    dDn_dThe.resize(dThe+1);
+    for(int k=0; k<dThe+1; k++) dDn_dThe[k]=0.0;
+    
+    if(dThe>4) return;
+    if(dbeta_para>2) return;
+    if(dbeta2_perp>1) return;
+    if(dbeta2_perp==1 && dbeta_para!=0) return;
+    
+    if(dbeta2_perp==1){
+        compute_all_Te_derivatives_upto_dThe(dThe, [this]() { return this->Dn_dbeta2_perp();});
+    }
+    else if(dbeta_para==1){
+        compute_all_Te_derivatives_upto_dThe(dThe, [this]() { return this->Dn_dbeta_para();});
+    }
+    else if(dbeta_para==2){
+        compute_all_Te_derivatives_upto_dThe(dThe, [this]() { return this->Dn_d2beta_para();});
+    }
+    //==============================================================================================
+    // The derivatives only
+    //==============================================================================================
+    else{
+        compute_all_Te_derivatives_upto_dThe(dThe, [this]() { return this->Dn_for_The();});
+    }
+    dDn = dDn_dThe;
+}
+
 
 //==================================================================================================
 //
@@ -596,157 +538,40 @@ double Dn_kSZ_appr2m_CMB(double x, double Theta, double betac, int max_order)
 double compute_SZ_distortion_asymptotic(double x, 
                                         double The, double betac, double muc, 
                                         int Te_order, int betac_order, 
-                                        string mode)
-{
-    double Dn_th=0.0, Dn_k1=0.0, Dn_k2=0.0, Dn_k2m=0.0; 
-    
-    Te_order++;
-    
-    if(betac_order>0)
-    {
-        if(mode=="dipole" || mode=="all" || mode=="kin") 
-            Dn_k1=Dn_kSZ_appr1 (x, The, betac, muc, Te_order);
-        
-        if(betac_order>1)
-        {
-            if(mode=="monopole_corr" || mode=="all" || mode=="kin") 
-                Dn_k2m=Dn_kSZ_appr2m(x, The, betac, Te_order);
-           
-            if(mode=="quadrupole" || mode=="all" || mode=="kin") 
-                Dn_k2=Dn_kSZ_appr2 (x, The, betac, muc, Te_order);
-        }
+                                        string mode, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x,The,betac,muc,Te_order,betac_order,CMBframe);
+    return szDistortion.compute_distortion(mode);
+}
+
+void compute_SZ_distortion_asymptotic(vector<double> &Dn, vector<double> x,
+                                      double The, double betac, double muc, int Te_order, int betac_order,
+                                      string mode, bool DI, bool CMBframe){
+    int gridpoints = x.size();
+    Dn.resize(gridpoints);
+    Parameters fp = Parameters(); //This is just to get a value for the Dn_DI conversion 
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x[0],The,betac,muc,Te_order,betac_order,CMBframe);
+    Dn[0] = (DI ? pow(x[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*szDistortion.compute_distortion(mode);
+    for(int k = 1; k < gridpoints; k++){
+        szDistortion.Update_x(x[k]);
+        Dn[k] = szDistortion.compute_distortion(mode);
+        if (DI) { Dn[k] *= pow(x[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
-    
-    if(mode=="monopole" || mode=="all") 
-        Dn_th=Dn_thSZ_appr (x, The, Te_order);
-    
-    return  Dn_th+Dn_k1+Dn_k2+Dn_k2m;
 }
 
-//==================================================================================================
-//
-// compute Dn using asymptotic expansion in CMB rest frame (added 10.07 by JC)
-//
-// mode == "monopole"      --> only monopole part without second order kinematic corr
-// mode == "dipole"        --> only dipolar part     (first order kinematic correction)
-// mode == "quadrupole"    --> only quadrupolar part (second order kinematic correction)
-// mode == "monopole_corr" --> only second order kinematic correction to monopole part
-// mode == "all"           --> all terms added
-// mode == "kin"           --> only kinematic terms
-//
-//==================================================================================================
-double compute_SZ_distortion_asymptotic_CMB(double x, 
-                                            double The, double betac, double muc, 
-                                            int Te_order, int betac_order,
-                                            string mode)
-{
-    double Dn_th=0.0, Dn_k1=0.0, Dn_k2=0.0, Dn_k2m=0.0; 
-    
-    Te_order++;
-    
-    if(betac_order>0)
-    {
-        if(mode=="dipole" || mode=="all" || mode=="kin") 
-            Dn_k1=Dn_kSZ_appr1_CMB(x, The, betac, muc, Te_order);
-        
-        if(betac_order>1)
-        {
-            if(mode=="monopole_corr" || mode=="all" || mode=="kin") 
-                Dn_k2m=Dn_kSZ_appr2m_CMB(x, The, betac, Te_order);
-            
-            if(mode=="quadrupole" || mode=="all" || mode=="kin") 
-                Dn_k2=Dn_kSZ_appr2_CMB(x, The, betac, muc, Te_order);
-        }
+double compute_SZ_distortion_asymptotic(int k, Parameters fp, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(fp.k_inRange(k), fp, CMBframe);
+    return szDistortion.compute_distortion(fp.rare.RunMode);
+}
+
+void compute_SZ_distortion_asymptotic(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe){
+    Dn.resize(fp.gridpoints);
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(0, fp, CMBframe);
+    Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
+    for(int k = 1; k < fp.gridpoints; k++){
+        szDistortion.Update_x(fp.xcmb[k]);
+        Dn[k] = fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
-    
-    if(mode=="monopole" || mode=="all") 
-        Dn_th=Dn_thSZ_appr (x, The, Te_order);
-    
-    return  Dn_th+Dn_k1+Dn_k2+Dn_k2m;
-}
-
-//==================================================================================================
-// analytic derivatives in betac_parallel and betac_perp
-//==================================================================================================
-double Dn_asymptotic_CMB_for_The(double x, double The, double beta_para, double beta_perp)
-{ 
-    double betac=sqrt(beta_para*beta_para+beta_perp*beta_perp);
-    double muc= (betac==0 ? 0 : beta_para/betac);
-
-    double Dn_th= Dn_thSZ_appr (x, The, 11);
-    double Dn_k1= Dn_kSZ_appr1_CMB(x, The, betac, muc, 11);
-    double Dn_k2 =Dn_kSZ_appr2_CMB(x, The, betac, muc, 11); 
-    double Dn_k2m=Dn_kSZ_appr2m_CMB(x, The, betac, 11);
-    
-    return Dn_th+Dn_k1+Dn_k2+Dn_k2m;
-}
-
-double Dn_dbeta_para_asymptotic_CMB(double x, double The, double beta_para, double beta_perp)
-{
-    // 12th Sept 2013: fixed bug for negative beta_para (thanks to John ZuHone & Tony Mroczkowski)
-    double sig=beta_para/fabs(beta_para);
-    double Dn_k1= Dn_kSZ_appr1_CMB(x, The, 1.0, 1.0, 11);
-    double Dn_k2 =(beta_para!=0.0 ? 2.0*sig*Dn_kSZ_appr2_CMB(x, The, sqrt(fabs(beta_para)), 1.0, 11) : 0.0);
-    double Dn_k2m=2.0*beta_para*Dn_kSZ_appr2m_CMB(x, The, 1.0, 11);
-    
-    return Dn_k1+Dn_k2+Dn_k2m;
-}
-
-double Dn_d2beta_para_asymptotic_CMB(double x, double The, double beta_para, double beta_perp)
-{ 
-    double Dn_k2 =2.0*Dn_kSZ_appr2_CMB(x, The, 1.0, 1.0, 11); 
-    double Dn_k2m=2.0*Dn_kSZ_appr2m_CMB(x, The, 1.0, 11); 
-    
-    return  (Dn_k2+Dn_k2m) / 2.0;
-}
-
-double Dn_dbeta2_perp_asymptotic_CMB(double x, double The, double beta_para, double beta_perp)
-{ 
-    // 12th Sept 2013: betac^2 P_2(muc) == beta_para^2 - 0.5*beta_perp^2
-    double Dn_k2 =-0.5*Dn_kSZ_appr2_CMB(x, The, 1.0, 1.0, 11);
-    double Dn_k2m= Dn_kSZ_appr2m_CMB(x, The, 1.0, 11); 
-    
-    return  Dn_k2+Dn_k2m;
-}
-
-//==================================================================================================
-void compute_all_Te_derivatives_upto_dThe(double x, double The, 
-                                          double beta_para, double beta_perp, 
-                                          int dThe, 
-                                          double (*f)(double, double, double, double),
-                                          vector<double> &dDn_dThe)
-{
-    double d0, dp, dm, dp2, dm2;
-    double eps=0.01;
-    
-    dDn_dThe.resize(dThe+1);
-    d0=f(x, The, beta_para, beta_perp);
-    dDn_dThe[0]=d0;
-    
-    if(dThe>0)
-    {
-        dp =f(x, The*(1.0+eps),   beta_para, beta_perp);
-        dm =f(x, The*(1.0-eps),   beta_para, beta_perp);
-        dp2=f(x, The*(1.0+2*eps), beta_para, beta_perp);
-        dm2=f(x, The*(1.0-2*eps), beta_para, beta_perp);
-        
-        dDn_dThe[1]=(-dp2+8.0*dp-8.0*dm+dm2)/12.0/eps;
-
-        if(dThe>1)
-        {
-            dDn_dThe[2]=(dp-2.0*d0+dm)/pow(eps, 2) / (2.0);
-        
-            if(dThe>2)
-            {
-                dDn_dThe[3]=(dp2-2.0*dp+2.0*dm-dm2)/2.0/pow(eps, 3) / (6.0);
-            
-                if(dThe>3)
-                    dDn_dThe[4]=(dp2-4.0*dp+6.0*d0-4.0*dm+dm2)/pow(eps, 4) / (24.0);
-            }
-        }
-    }
-    
-    return;
 }
 
 //==================================================================================================
@@ -756,55 +581,15 @@ void compute_all_Te_derivatives_upto_dThe(double x, double The,
 //
 // constraints: dThe<=4; dbeta_para<=2; dbeta2_perp<=1;
 //==================================================================================================
-void Dcompute_SZ_distortion_asymptotic_CMB(double x, 
-                                           int dThe, int dbeta_para, int dbeta2_perp,
-                                           double The, double betac, double muc,
-                                           vector<double> &dDn_dThe)
-{
-    dDn_dThe.resize(dThe+1);
-    for(int k=0; k<dThe+1; k++) dDn_dThe[k]=0.0;
-    
-    if(dThe>4) return;
-    if(dbeta_para>2) return;
-    if(dbeta2_perp>1) return;
-    if(dbeta2_perp==1 && dbeta_para!=0) return;
-    
-    double betac_perp=betac*sqrt(1.0-muc*muc);
-    double betac_para=betac*muc;
-    
-    if(dbeta2_perp==1)
-    {
-        compute_all_Te_derivatives_upto_dThe(x, The, betac_para, betac_perp, dThe, 
-                                             Dn_dbeta2_perp_asymptotic_CMB,
-                                             dDn_dThe);
-    }
-    
-    else if(dbeta_para==1)
-    {
-        compute_all_Te_derivatives_upto_dThe(x, The, betac_para, betac_perp, dThe,
-                                             Dn_dbeta_para_asymptotic_CMB,
-                                             dDn_dThe);  
-    }
-
-    else if(dbeta_para==2)
-    {
-        compute_all_Te_derivatives_upto_dThe(x, The, betac_para, betac_perp, dThe, 
-                                             Dn_d2beta_para_asymptotic_CMB,
-                                             dDn_dThe);
-    }
-
-    //==============================================================================================
-    // The derivatives only
-    //==============================================================================================
-    else
-    {
-        compute_all_Te_derivatives_upto_dThe(x, The, betac_para, betac_perp, dThe, 
-                                             Dn_asymptotic_CMB_for_The,
-                                             dDn_dThe);        
-    }
-    
-    return;
+void Dcompute_SZ_distortion_asymptotic(double x, int dThe, int dbeta_para, int dbeta2_perp,
+                                       double The, double betac, double muc,
+                                       vector<double> &dDn_dThe, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x,The,betac,muc, CMBframe);
+    szDistortion.Dcompute_distortion(dThe, dbeta_para,dbeta2_perp, dDn_dThe);
 }
 
-//==================================================================================================
-//==================================================================================================
+void Dcompute_SZ_distortion_asymptotic(double x, Parameters &fp, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(0, fp, CMBframe, false);
+    szDistortion.Update_x(x);
+    szDistortion.Dcompute_distortion(fp.D.dThe, fp.D.dbeta_para, fp.D.dbeta2_perp, fp.D.dDn_dThe);
+}

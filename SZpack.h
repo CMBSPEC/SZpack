@@ -12,10 +12,10 @@
 //           - the electron distribution function is assumed to be thermal
 //==================================================================================================
 //
-// Author: Jens Chluba (CITA, University of Toronto and Johns Hopkins University)
+// Author: Jens Chluba & Elizabeth Lee
 //
 // first implementation: May  2012
-// last modification   : Aug  2017
+// last modification   : March 2020
 //
 //==================================================================================================
 // 28th Aug 2017: added y-weighted moment method for temperature corrections
@@ -57,22 +57,19 @@
 
 #include <cmath>
 #include <vector>
+#include "Parameters.h"
 
 #include "SZ_Integral.5D.h"
 #include "SZ_Integral.3D.h"
 #include "SZ_asymptotic.h"
 #include "SZ_CNSN_basis.h"
 #include "SZ_CNSN_basis.opt.h"
+//#include "SZ_Integral.Kernel.h"
+#include "SZ_nonrelativistic.h"
 
 using namespace std;
 
-const string SZpack_version="SZpack v1.1";
-
-//==================================================================================================
-// conversion factor x^3 Dn --> DI in MJy / sr
-//==================================================================================================
-const double T0_CMB=2.726;
-const double Dn_DI_conversion=13.33914078*pow(T0_CMB, 3);
+const string SZpack_version="SZpack v2.0";
 
 //==================================================================================================
 //
@@ -81,213 +78,33 @@ const double Dn_DI_conversion=13.33914078*pow(T0_CMB, 3);
 // 
 //      Dtau --> gammac (1-betac muc) Dtau 
 //
-// for an observer at rest in the CMB frame. To use this convention call 
-// 'use_Nozawa2006_convention();' before excecuting the other routines. To reset to the convention 
-// of Chluba et al. call 'use_CNSN_convention();', which is the default. These functions only have
-// to be called once. Subsequent calls of routines will use the convention that was set last.
+// for an observer at rest in the CMB frame. To use this convention call 'setConvention(true);' 
+// before executing the other routines. To reset to the convention of Chluba et al. call 
+// 'setConvention(false);', which is the default. These functions only have to be called once. 
+// Subsequent calls of routines will use the convention that was set last.
+// TODO: currently this is only used within the output_SZ_distortion() method.
 //
 //==================================================================================================
-void use_Nozawa2006_convention();
-void use_CNSN_convention();
+static bool CNSN2012_convention;
 
+void setConvention(bool UseNozawaConvention);
 
-//==================================================================================================
-//
-//  Full numerical integration of the 5-dimensional Compton collision term. All terms in betac are
-//  included. In principle here one can easily add the scattering of primordial CMB anisotropies.
-//
-//  eps_Int : relative accuracy for numerical integration (lower than 10^-6 is hard to achieve)
-//
-//==================================================================================================
-double compute_SZ_signal_5D(double xo, 
-                            double Dtau, double Te, 
-                            double betac, double muc, 
-                            double betao, double muo, 
-                            double eps_Int=1.0e-4);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_5D(double *xo, int np, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int=1.0e-4);
-
-void compute_SZ_signal_5D(vector<double> &xo, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int=1.0e-4);
-
-
-//==================================================================================================
-//
-//  Full numerical integration after reduction of Compton collision term to 3 dimensions. Only terms
-//  up to betac^2 are retained. Execution of this routine is significantly faster than for the full 
-//  5D integral.
-//
-//  eps_Int : relative accuracy for numerical integration (lower than 10^-6 is hard to achieve)
-//
-//==================================================================================================
-double compute_SZ_signal_3D(double xo, 
-                            double Dtau, double Te, 
-                            double betac, double muc, 
-                            double betao, double muo, 
-                            double eps_Int=1.0e-4);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_3D(double *xo, int np, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int=1.0e-4);
-
-void compute_SZ_signal_3D(vector<double> &xo, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int=1.0e-4);
-
-
-//==================================================================================================
-//
-//  Asymptotic expansion of the Compton collision integral similar to Itoh et al. but up to 
-//  10th order in temperature. Kinematic terms are computed according to Chluba et al. 2012.
-//
-//  The additional parameters are:
-//  
-//  Te_order    (<=10): maximal order of temperature corrections. Te_order==0 means that the  
-//                      normal thSZ formula is used.
-//  betac_order (<=2) : maximal order of the kinematic corrections in the cluster frame. 
-//                      betac_order == 0 means only the thSZ effect is considered.
-//
-//==================================================================================================
-double compute_SZ_signal_asymptotic(double xo, 
-                                    double Dtau, double Te, 
-                                    double betac, double muc, 
-                                    double betao, double muo, 
-                                    int Te_order, int betac_order);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_asymptotic(double *xo, int np, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order);
-
-void compute_SZ_signal_asymptotic(vector<double> &xo, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order);
-
-
-//==================================================================================================
-//
-//  Improved expansion of the Compton collision integral following the approach of 
-//  Chluba, Nagai, Sazonov, Nelson, 2012 
-//
-//  The additional parameters are:
-//  
-//  Te_order    (<=20): maximal order of temperature corrections. Te_order<=4 is not recommended.
-//  betac_order (<=2) : maximal order of the kinematic corrections in the cluster frame. 
-//                      betac_order == 0 means only the thSZ effect is considered.
-//
-//==================================================================================================
-// 22th July, 2012: The allowed temperature range has been increased to 2keV < Te < 75keV 
-//                  (see SZ_CNSN_basis.cpp for details)
-//--------------------------------------------------------------------------------------------------
-double compute_SZ_signal_CNSN_basis(double xo, 
-                                    double Dtau, double Te, 
-                                    double betac, double muc, 
-                                    double betao, double muo, 
-                                    int Te_order, int betac_order);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_CNSN_basis(double *xo, int np, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order);
-
-void compute_SZ_signal_CNSN_basis(vector<double> &xo, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order);
-
-
-//==================================================================================================
-//
-// Similar to compute_SZ_signal_CNSN_basis-function defined above but here kmax and accuracy_level
-// can be set according to the definitions of CSNN2012. Note that here the SZ signal is computed
-// for an observer in the CMB rest frame, while the SZ signal in the observer frame is obtained by
-// Lorentz-transformation.
-//
-// kmax: depends on accuracy_level (see Table 1 in CSNN2012)
-// accuracy_level: 0, 1, 2, 3
-//
-// Dependening on kmax and accuracy_level the maximal allowed temperature varies slightly but is
-// usually larger than 60 keV (Table 1 in CSNN2012).
-//
-// (added 20.12.2012)
-//==================================================================================================
-double compute_SZ_signal_CNSN_basis_opt(double xo,
-                                        double Dtau, double Te,
-                                        double betac, double muc,
-                                        double betao, double muo,
-                                        int kmax, int betac_order,
-                                        int accuracy_level);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_CNSN_basis_opt(double *xo, int np,
-                                      double Dtau, double Te,
-                                      double betac, double muc,
-                                      double betao, double muo,
-                                      int kmax, int betac_order,
-                                      int accuracy_level);
-
-void compute_SZ_signal_CNSN_basis_opt(vector<double> &xo,
-                                      double Dtau, double Te,
-                                      double betac, double muc,
-                                      double betao, double muo,
-                                      int kmax, int betac_order,
-                                      int accuracy_level);
-
-//==================================================================================================
-// 
-// Combination of asymptotic expansion and CNSN basis functions. This routine should reproduce the 
-// full numerical result for 0.01 < x < 30, Te < 75keV, and beta < 0.01 with precision similar
-// to 0.001%. (added 22th July, 2012, by JC)
-//
-//==================================================================================================
-double compute_SZ_signal_combo(double xo, 
-                               double Dtau, double Te, 
-                               double betac, double muc, 
-                               double betao, double muo);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo(double *xo, int np, 
-                             double Dtau, double Te, 
-                             double betac, double muc, 
-                             double betao, double muo);
-
-void compute_SZ_signal_combo(vector<double> &xo, 
-                             double Dtau, double Te, 
-                             double betac, double muc, 
-                             double betao, double muo);
-
+double compute_signal_nonrelativistic(int k, Parameters &functionParameters);
+double compute_signal_5D(int k, Parameters &functionParameters);
+double compute_signal_3D(int k, Parameters &functionParameters);
+//double compute_signal_Kernel(int k, Parameters &functionParameters);
+double compute_signal_asymptotic(int k, Parameters &functionParameters, bool CMBframe);
+double compute_signal_asymptotic(int k, Parameters &functionParameters);
+double compute_signal_CNSN(int k, Parameters &functionParameters, bool CMBframe);
+double compute_signal_CNSN(int k, Parameters &functionParameters);
+double compute_signal_CNSN_opt(int k, Parameters &functionParameters);
+double compute_signal_combo(int k, Parameters &functionParameters, bool CMBframe);
+double compute_signal_combo(int k, Parameters &functionParameters);
+double compute_signal_means(int k, Parameters &functionParameters, bool yw);
+double compute_signal_means_tw(int k, Parameters &functionParameters);
+double compute_signal_means_yw(int k, Parameters &functionParameters);
+double compute_signal_RelCorrs(int k, Parameters &functionParameters);
+double compute_signal_TDispersion(int k, Parameters &functionParameters);
 
 //==================================================================================================
 // Derivatives (The^k d^k_dThe /k!) (d^m_dbetapara /m!) (d^l_beta2perp /l!) S(...)
@@ -296,10 +113,13 @@ void compute_SZ_signal_combo(vector<double> &xo,
 //
 // constraints: dThe<=4; dbeta_para<=2; dbeta2_perp<=1;
 //==================================================================================================
-void Dcompute_SZ_signal_combo_CMB(double x, int k, int m, int l,
-                                  double Dtau, double Te, double betac, double muc,
-                                  vector<double> &dDn_dThe);
+void Dcompute_signal_combo_CMB(double x, Parameters &fp, bool yw=false);
 
+//==================================================================================================
+// compute x derivatives from the combo method
+//==================================================================================================
+
+double Dcompute_signal_combo_for_x(double x0, Parameters fp, int dx);
 
 //==================================================================================================
 // 
@@ -308,42 +128,7 @@ void Dcompute_SZ_signal_combo_CMB(double x, int k, int m, int l,
 // precision similar to 0.001%, assuming smooth cluster profile. (added 6th Aug, 2012, JC)
 //
 //==================================================================================================
-double compute_SZ_signal_combo_means(double xo, 
-                                     // mean parameters
-                                     double tau, double TeSZ, double betac_para,
-                                     // variances
-                                     double omega, double sigma, 
-                                     double kappa, double betac2_perp);
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo_means(double *xo, int np, 
-                                   // mean parameters
-                                   double tau, double TeSZ, double betac_para,
-                                   // variances
-                                   double omega, double sigma, 
-                                   double kappa, double betac2_perp);
-
-void compute_SZ_signal_combo_means(vector<double> &xo, 
-                                   // mean parameters
-                                   double tau, double TeSZ, double betac_para,
-                                   // variances
-                                   double omega, double sigma, 
-                                   double kappa, double betac2_perp);
-
-
-//==================================================================================================
-// 
-// Compute null of SZ signal using expansion around mean values of tau, TeSZ, and betac*muc. This  
-// routine should reproduce the full numerical result for Te < 75keV, and beta < 0.01 with high 
-// precision, assuming smooth cluster profile. (added 8th Aug, 2012, JC)
-//
-//==================================================================================================
-double compute_null_of_SZ_signal(double tau, double TeSZ, double betac_para,
-                                 double omega, double sigma, 
-                                 double kappa, double betac2_perp);
-
+double compute_null_of_SZ_signal(Parameters fp);
 
 //==================================================================================================
 //
@@ -361,62 +146,46 @@ double compute_null_of_SZ_signal(double tau, double TeSZ, double betac_para,
 // (added 29th Aug, 2012, JC)
 //
 //==================================================================================================
-double compute_SZ_signal_combo_means_ex(double xo, 
-                                        // mean parameters
-                                        double tau, double TeSZ, double betac_para,
-                                        // variances
-                                        double omega[3], double sigma[3], 
-                                        double kappa, double betac2_perp);
+double compute_signal_means_ex(int k, Parameters &fp, bool yw=false);
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo_means_ex(double *xo, int np, 
-                                      // mean parameters
-                                      double tau, double TeSZ, double betac_para,
-                                      // variances
-                                      double omega[3], double sigma[3], 
-                                      double kappa, double betac2_perp);
-
-void compute_SZ_signal_combo_means_ex(vector<double> &xo, 
-                                      // mean parameters
-                                      double tau, double TeSZ, double betac_para,
-                                      // variances
-                                      double omega[3], double sigma[3], 
-                                      double kappa, double betac2_perp);
+// Calculates the combined signal to fp.Dn and the best fit omegas values for the two T signal
+void compute_signal_TwoTemperatures(vector<double> &Dn, double ftau, double DT_T, Parameters &fp, 
+                                    bool DI, bool CMBframe=true);
 
 //==================================================================================================
-//
-// y-weighted moment expansion for up to O(The^4) for thSZ only. Using the definition
-// dy = (kTe / mec^2) dtau in the expressions below, we have the parameters
-//
-// y      : y     = int dy               [dimensionless]
-// TeSZ   : TeSZ  = y^-1 int Te dy       [keV  ]
-// TeSZ2  : TeSZ2 = y^-1 int Te^2 dy     [keV^2]
-// TeSZ3  : TeSZ3 = y^-1 int Te^3 dy     [keV^3]
-// TeSZ4  : TeSZ4 = y^-1 int Te^4 dy     [keV^4]
-//
-// The integrals have to be taken along the considered line-of-sight.
-//
-// [added 28.08.2017 JC]
+// Vector forms of all of the signals
+// These contain the Dtau factor already.
 //==================================================================================================
-double compute_SZ_signal_combo_means_yw(double xo,
-                                        // mean parameters
-                                        double y, double TeSZ,
-                                        double TeSZ2, double TeSZ3, double TeSZ4);
+void compute_signal_nonrelativistic(vector<double> &Dn, Parameters &fp, bool DI);
+void compute_signal_5D(vector<double> &Dn, Parameters &fp, bool DI);
+void compute_signal_3D(vector<double> &Dn, Parameters &fp, bool DI);
+//void compute_signal_Kernel(vector<double> &Dn, Parameters &fp, bool DI);
+void compute_signal_asymptotic(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe=false);
+void compute_signal_CNSN(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe=false);
+void compute_signal_CNSN_opt(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe=false);
+void compute_signal_combo(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe=false);
+void compute_signal_precise(vector<double> &Dn, Parameters &fp, bool DI);
+void compute_signal_means(vector<double> &Dn, Parameters &fp, bool DI, bool yw=false);
+void compute_signal_means_ex(vector<double> &Dn, Parameters &fp, bool DI, bool yw=false);
+void compute_signal_RelCorrs(vector<double> &Dn, Parameters &fp, bool DI);
+void compute_signal_TDispersion(vector<double> &Dn, Parameters &fp, bool DI);
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo_means_yw(double *xo, int np,
-                                      // mean parameters
-                                      double y, double TeSZ,
-                                      double TeSZ2, double TeSZ3, double TeSZ4);
+// Vector forms of the Dcomputes. These return the derivative at each x in fp.xcmb.
+void Dcompute_signal_combo_CMB(vector<double> &Dn, Parameters &fp, 
+                               int dThe, int dbeta_para, int dbeta2_perp, bool yw, bool DI);
+void Dcompute_signal_combo_for_x(vector<double> &Dn, Parameters fp, int dx);
 
-void compute_SZ_signal_combo_means_yw(vector<double> &xo,
-                                      // mean parameters
-                                      double y, double TeSZ,
-                                      double TeSZ2, double TeSZ3, double TeSZ4);
+
+//==================================================================================================
+// Vector methods to transform the signal from DI/Dn to DT/Tcmb
+// i.e., the signal expressed as variations to the cmb temperature
+//==================================================================================================
+
+// This method converts through an inversion of the boltzmann distribution at each frequency.
+void convert_signal_DT(vector<double> &DT, vector<double> xcmb, vector<double> Dn);
+
+// This method converts by using the first derivative and ignoring higher order terms.
+void convert_signal_DT_approx(vector<double> &DT, vector<double> xcmb, vector<double> Dn);
 
 #endif
 

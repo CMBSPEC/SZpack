@@ -12,10 +12,10 @@
 //           - the electron distribution function is assumed to be thermal
 //==================================================================================================
 //
-// Author: Jens Chluba (CITA, University of Toronto and Johns Hopkins University)
+// Author: Jens Chluba & Elizabeth Lee
 //
 // first implementation: May  2012
-// last modification   : Aug  2017
+// last modification   : March 2020
 //
 //==================================================================================================
 // 28th Aug 2017: added y-weighted moment method for temperature corrections
@@ -64,440 +64,84 @@
 
 using namespace std;
 
-
-//==================================================================================================
-//
-// As discussed by Chluba et el. 2012, Nozawa 1998 and 2006 used another convention for the optical
-// depth variable.
-// 
-//      Dtau --> gammac (1-betac muc) Dtau 
-//
-// for an observer at rest in the CMB frame. To use this convention call 
-// 'use_Nozawa2006_convention();' before excecuting the other routines. To reset to the convention 
-// of Chluba et al. call 'use_CNSN_convention();', which is the default. These functions only have
-// to be called once. Subsequent calls of routines will use the convention that was set last.
-//
-//==================================================================================================
-bool CNSN2012_convention=1;
-
-void use_Nozawa2006_convention(){ CNSN2012_convention=0; }
-void use_CNSN_convention(){ CNSN2012_convention=1; }
-
-
-//==================================================================================================
-//
-//  Full numerical integration of the 5-dimensional Compton collision term. All terms in betac are
-//  included. In principle here one can easily add the scattering of primordial CMB anisotropies.
-//
-//  eps_Int : relative accuracy for numerical integration (lower than 10^-6 is hard to achieve)
-//
-//==================================================================================================
-double compute_SZ_signal_5D(double xo, 
-                            double Dtau, double Te, 
-                            double betac, double muc, 
-                            double betao, double muo, 
-                            double eps_Int)
-{
-    double The=Te/const_me; // conversion keV --> The = k Te / me c^2
-    double gammao=1.0/sqrt(1.0-betao*betao);
-    double gammac=1.0/sqrt(1.0-betac*betac);
-    
-    // transformation of muc to mucc
-    double mucc=(muc-betac)/(1.0-betac*muc);
-        
-    // transformation of xo to xc
-    double xc=gammac*(1.0-betac*mucc)*gammao*xo*(1.0+betao*muo);
-    
-    // change to Nozawa 2006 convention for scattering optical depth
-    if(!CNSN2012_convention) Dtau*=gammac*(1.0-betac*mucc);
-    
-    return Dtau*compute_SZ_distortion_Patterson_5D(xc, The, betac, mucc, eps_Int);
+void setConvention(bool UseNozawaConvention){
+    CNSN2012_convention = !UseNozawaConvention;
 }
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_5D(double *xo, int np, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_5D(xo[m], Dtau, Te, betac, muc, betao, muo, eps_Int);
-    
-    return;
-}
-
-
-
-void compute_SZ_signal_5D(vector<double> &xo, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int)
-{
-    compute_SZ_signal_5D(&xo[0], xo.size(), Dtau, Te, betac, muc, betao, muo, eps_Int);
-    
-    return;
-}
-
-
+// Note: If The or Te = 0.0, none of these will give the appropriate return. (Since y is calculated
+// as Dtau*The). To calculate the nonrelativistic signal, use the specific function.
 //==================================================================================================
-//
-//  Full numerical integration after reduction of Compton collision term to 3 dimensions. Only terms
-//  up to betac^2 are retained. Execution of this routine is significantly faster than for the full 
-//  5D integral.
-//
-//  eps_Int : relative accuracy for numerical integration (lower than 10^-6 is hard to achieve)
-//
-//==================================================================================================
-double compute_SZ_signal_3D(double xo, 
-                            double Dtau, double Te, 
-                            double betac, double muc, 
-                            double betao, double muo, 
-                            double eps_Int)
-{
-    double The=Te/const_me; // conversion keV --> The = k Te / me c^2
-    double gammao=1.0/sqrt(1.0-betao*betao);
-    double gammac=1.0/sqrt(1.0-betac*betac);
-    
-    // transformation of muc to mucc
-    double mucc=(muc-betac)/(1.0-betac*muc);
-    
-    // transformation of xo to xc
-    double xc=gammac*(1.0-betac*mucc)*gammao*xo*(1.0+betao*muo);
-    
-    // change to Nozawa 2006 convention for scattering optical depth
-    if(!CNSN2012_convention) Dtau*=gammac*(1.0-betac*mucc);
-
-    return Dtau*compute_SZ_distortion_Patterson_3D(xc, The, betac, mucc, "all", eps_Int);
+double compute_signal_nonrelativistic(int k, Parameters &fp){
+    return fp.Dtau*compute_SZ_distortion_nonrelativistic(k, fp);
 }
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_3D(double *xo, int np, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_3D(xo[m], Dtau, Te, betac, muc, betao, muo, eps_Int);
-    
-    return;
+double compute_signal_5D(int k, Parameters &fp){
+    return fp.Dtau*compute_SZ_distortion_Patterson_5D(k, fp);
 }
 
-
-
-void compute_SZ_signal_3D(vector<double> &xo, 
-                          double Dtau, double Te, 
-                          double betac, double muc, 
-                          double betao, double muo, 
-                          double eps_Int)
-{
-    compute_SZ_signal_3D(&xo[0], xo.size(), Dtau, Te, betac, muc, betao, muo, eps_Int);
-    
-    return;
+double compute_signal_3D(int k, Parameters &fp){
+    return fp.Dtau*compute_SZ_distortion_Patterson_3D(k, fp);
 }
 
+double compute_signal_asymptotic(int k, Parameters &fp, bool CMBframe){
+    if(fp.Te>20.0) { 
+        print_error("compute_SZ_signal_asymptotic :: Temperature really (!) high (Te = " + to_string(fp.Te) + " keV)");
+    }
+    
+    if(fp.T_order>10){ fp.T_order=10; }
+    if(fp.beta_order>2){ fp.beta_order=2; }
 
-//==================================================================================================
-//
-//  Asymptotic expansion of the Compton collision integral similar to Itoh et al. but up to 
-//  10th order in temperature. Kinematic terms are computed according to Chluba et al. 2012.
-//
-//  The additional parameters are:
-//  
-//  Te_order    (<=10): maximal order of temperature corrections. Te_order==0 means that the  
-//                      normal thSZ formula is used.
-//  betac_order (<=2) : maximal order of the kinematic corrections in the cluster frame. 
-//                      betac_order == 0 means only the thSZ effect is considered.
-//
-//==================================================================================================
-double compute_SZ_signal_asymptotic(double xo, 
-                                    double Dtau, double Te, 
-                                    double betac, double muc, 
-                                    double betao, double muo, 
-                                    int Te_order, int betac_order)
-{
+    return fp.Dtau*compute_SZ_distortion_asymptotic(k, fp, CMBframe);
+}
+
+double compute_signal_asymptotic(int k, Parameters &functionParameters){
+    return compute_signal_asymptotic(k, functionParameters, true);
+}
+
+double compute_signal_CNSN(int k, Parameters &fp, bool CMBframe){
+    if(fp.xcmb[k]<0.01 || fp.xcmb[k]>50.0) { 
+        exit_error("compute_SZ_signal_CNSN_basis :: You are outside of grid");
+    }
+
+    if(fp.Te<2.0 || fp.Te>75.0){ 
+        exit_error("compute_SZ_signal_CNSN_basis :: Temperature too high/low: " + to_string(fp.Te) + "keV");
+    }
+
+    if(fp.T_order>20){ fp.T_order=20; }
+    if(fp.beta_order>2){ fp.beta_order=2; }
+
+    return fp.Dtau*compute_SZ_distortion_CNSN_basis(k, fp, CMBframe);
+}
+
+double compute_signal_CNSN(int k, Parameters &functionParameters){
+    return compute_signal_CNSN(k, functionParameters, true);
+}
+
+double compute_signal_CNSN_opt(int k, Parameters &fp){
     //==============================================================================================
     // simple sanity checks
     //==============================================================================================
-    if(Te>20.0)
-    { 
-        cerr << " compute_SZ_signal_asymptotic :: Temperature really (!) high "
-             << "(Te = " << Te << " keV)" << endl;
-    }
-    
-    if(Te_order>10){ Te_order=10; }
-    if(betac_order>2){ betac_order=2; }
-    
-    //==============================================================================================
-    // computations
-    //==============================================================================================
-    double The=Te/const_me; // conversion keV --> The = k Te / me c^2
-    double gammao=1.0/sqrt(1.0-betao*betao);
-    double gammac=1.0/sqrt(1.0-betac*betac);
-    
-    // transformation of muc to mucc
-    double mucc=(muc-betac)/(1.0-betac*muc);
-    
-    // transformation of xo to xc
-    double xc=gammac*(1.0-betac*mucc)*gammao*xo*(1.0+betao*muo);
-    
-    // change to Nozawa 2006 convention for scattering optical depth
-    if(!CNSN2012_convention) Dtau*=gammac*(1.0-betac*mucc);
-
-    return Dtau*compute_SZ_distortion_asymptotic(xc, The, betac, mucc, Te_order, betac_order,"all");
-}
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_asymptotic(double *xo, int np, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_asymptotic(xo[m], Dtau, Te, 
-                                           betac, muc, betao, muo, 
-                                           Te_order, betac_order);
-    
-    return;
-}
-
-
-
-void compute_SZ_signal_asymptotic(vector<double> &xo, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order)
-{
-    compute_SZ_signal_asymptotic(&xo[0], xo.size(), Dtau, Te,                                           
-                                 betac, muc, betao, muo, 
-                                 Te_order, betac_order);
-    
-    return;
-}
-
-
-//==================================================================================================
-//
-//  Improved expansion of the Compton collision integral following the approach of 
-//  Chluba, Nagai, Sazonov, Nelson, 2012 
-//
-//  The additional parameters are:
-//  
-//  Te_order    (<=20): maximal order of temperature corrections. Te_order<=4 is not recommended.
-//  betac_order (<=2) : maximal order of the kinematic corrections in the cluster frame. 
-//                      betac_order == 0 means only the thSZ effect is considered.
-//
-//==================================================================================================
-// 22th July, 2012: The allowed temperature range has been increased to 2keV < Te < 75keV 
-//                  (see SZ_CNSN_basis.cpp for details)
-//--------------------------------------------------------------------------------------------------
-double compute_SZ_signal_CNSN_basis(double xo, 
-                                    double Dtau, double Te, 
-                                    double betac, double muc, 
-                                    double betao, double muo, 
-                                    int Te_order, int betac_order)
-{
-    //==============================================================================================
-    // simple sanity checks
-    //==============================================================================================
-    if(xo<0.01 || xo>50.0)
-    { 
-        cerr << " compute_SZ_signal_CNSN_basis :: You are outside of grid \n" << endl;
-        exit(0);
-    }
-    
-    if(Te<2.0 || Te>75.0)
-    { 
-        cerr << " compute_SZ_signal_CNSN_basis :: Temperature too high/low \n" << endl;
-        exit(0);
+    if(fp.xcmb[k]<0.01 || fp.xcmb[k]>50.0){
+        exit_error("compute_SZ_signal_CNSN_basis_opt :: You are outside of grid");
     }
 
-    if(Te_order>20){ Te_order=20; }
-    if(betac_order>2){ betac_order=2; }
-    
-    //==============================================================================================
-    // computations
-    //==============================================================================================
-    double The=Te/const_me; // conversion keV --> The = k Te / me c^2
-    double gammao=1.0/sqrt(1.0-betao*betao);
-    double gammac=1.0/sqrt(1.0-betac*betac);
-    
-    // transformation of muc to mucc
-    double mucc=(muc-betac)/(1.0-betac*muc);
-    
-    // transformation of xo to xc
-    double xc=gammac*(1.0-betac*mucc)*gammao*xo*(1.0+betao*muo);
-    
-    // change to Nozawa 2006 convention for scattering optical depth
-    if(!CNSN2012_convention) Dtau*=gammac*(1.0-betac*mucc);
-
-    return Dtau*compute_SZ_distortion_CNSN_basis(xc, The, betac, mucc, Te_order, betac_order,"all");
+    return fp.Dtau*compute_SZ_distortion_CNSN_basis_opt(k, fp, true);
 }
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_CNSN_basis(double *xo, int np, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_CNSN_basis(xo[m], Dtau, Te, 
-                                           betac, muc, betao, muo, 
-                                           Te_order, betac_order);
-    
-    return;
-}
-
-
-
-void compute_SZ_signal_CNSN_basis(vector<double> &xo, 
-                                  double Dtau, double Te, 
-                                  double betac, double muc, 
-                                  double betao, double muo, 
-                                  int Te_order, int betac_order)
-{
-    compute_SZ_signal_CNSN_basis(&xo[0], xo.size(), Dtau, Te,                                           
-                                 betac, muc, betao, muo, 
-                                 Te_order, betac_order);
-    
-    return;
-}
-
-
-//==================================================================================================
-//
-// Similar to compute_SZ_signal_CNSN_basis-function defined above but here kmax and accuracy_level
-// can be set according to the definitions of CSNN2012. Note that here the SZ signal is computed 
-// for an observer in the CMB rest frame, while the SZ signal in the observer frame is obtained by
-// Lorentz-transformation.
-//
-// kmax: depends on accuracy_level (see Table 1 in CSNN2012)
-// accuracy_level: 0, 1, 2, 3
-//
-// Dependening on kmax and accuracy_level the maximal allowed temperature varies slightly but is
-// usually larger than 60 keV (Table 1 in CSNN2012).
-//
-// (added 20.12.2012)
-//==================================================================================================
-double compute_SZ_signal_CNSN_basis_opt(double xo,
-                                        double Dtau, double Te,
-                                        double betac, double muc,
-                                        double betao, double muo,
-                                        int kmax, int betac_order,
-                                        int accuracy_level)
-{
-    //==============================================================================================
-    // simple sanity checks
-    //==============================================================================================
-    if(xo<0.01 || xo>50.0)
-    {
-        cerr << " compute_SZ_signal_CNSN_basis_opt :: You are outside of grid \n" << endl;
-        exit(0);
+double compute_signal_combo(int k, Parameters &fp, bool CMBframe){
+    if(fp.Te<2.0){
+        fp.T_order = 10;
+        fp.beta_order = 2;
+        return compute_signal_asymptotic(k, fp, CMBframe); 
     }
-    
-    //==============================================================================================
-    // computations
-    //==============================================================================================
-    double The=Te/const_me; // conversion keV --> The = k Te / me c^2
-    double gammao=1.0/sqrt(1.0-betao*betao);
-    
-    // transformation of xo to xc
-    double xc=gammao*xo*(1.0+betao*muo);
-    
-    return Dtau*compute_SZ_distortion_CNSN_basis_opt(xc, The, betac, muc, kmax,
-                                                     betac_order, "all", accuracy_level);
+    fp.T_order = 20;
+    fp.beta_order = 2;
+    return compute_signal_CNSN(k, fp, CMBframe); 
 }
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_CNSN_basis_opt(double *xo, int np,
-                                      double Dtau, double Te,
-                                      double betac, double muc,
-                                      double betao, double muo,
-                                      int kmax, int betac_order,
-                                      int accuracy_level)
-{
-    for(int m=0; m<np; m++)
-        xo[m]=compute_SZ_signal_CNSN_basis_opt(xo[m], Dtau, Te,
-                                               betac, muc, betao, muo,
-                                               kmax, betac_order, accuracy_level);
-    
-    return;
+double compute_signal_combo(int k, Parameters &functionParameters){
+    return compute_signal_combo(k, functionParameters, true);
 }
-
-
-
-void compute_SZ_signal_CNSN_basis_opt(vector<double> &xo,
-                                      double Dtau, double Te,
-                                      double betac, double muc,
-                                      double betao, double muo,
-                                      int kmax, int betac_order,
-                                      int accuracy_level)
-{
-    compute_SZ_signal_CNSN_basis_opt(&xo[0], xo.size(), Dtau, Te,
-                                     betac, muc, betao, muo,
-                                     kmax, betac_order, accuracy_level);
-    
-    return;
-}
-
-
-//==================================================================================================
-// 
-// Combination of asymptotic expansion and CNSN basis functions. This routine should reproduce the 
-// full numerical result for 0.01 < x < 30, Te < 75keV, and beta < 0.01 with precision similar
-// to 0.001%. (added 22th July, 2012, by JC)
-//
-//==================================================================================================
-double compute_SZ_signal_combo(double xo, 
-                               double Dtau, double Te, 
-                               double betac, double muc, 
-                               double betao, double muo)
-{
-    if(Te<2.0) return compute_SZ_signal_asymptotic(xo, Dtau, Te, betac, muc, betao, muo, 10, 2); 
-    return compute_SZ_signal_CNSN_basis(xo, Dtau, Te, betac, muc, betao, muo, 20, 2); 
-}
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo(double *xo, int np, 
-                             double Dtau, double Te, 
-                             double betac, double muc, 
-                             double betao, double muo)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_combo(xo[m], Dtau, Te, betac, muc, betao, muo);
-
-    return;
-}
-    
-
-
-void compute_SZ_signal_combo(vector<double> &xo, 
-                             double Dtau, double Te, 
-                             double betac, double muc, 
-                             double betao, double muo)
-{
-    compute_SZ_signal_combo(&xo[0], xo.size(), Dtau, Te, betac, muc, betao, muo);
-
-    return;
-}
-
 
 //==================================================================================================
 // Derivatives (The^k d^k_dThe /k!) (d^m_dbetapara /m!) (d^l_beta2perp /l!) S(...)
@@ -506,112 +150,132 @@ void compute_SZ_signal_combo(vector<double> &xo,
 //
 // constraints: dThe<=4; dbeta_para<=2; dbeta2_perp<=1;
 //==================================================================================================
-void Dcompute_SZ_signal_combo_CMB(double x, int k, int m, int l,
-                                  double Dtau, double Te, double betac, double muc,
-                                  vector<double> &dDn_dThe)
+void Dcompute_signal_combo_CMB(double x, Parameters &fp, bool yw)
 {
-    if(Te<2.0) Dcompute_SZ_distortion_asymptotic_CMB(x, k, m, l, Te/const_me, betac, muc, dDn_dThe); 
+    if(fp.Te<2.0) Dcompute_SZ_distortion_asymptotic(x, fp, true); 
     else
     {
         //==========================================================================================
         // simple sanity checks
         //==========================================================================================
-        if(x<0.01 || x>50.0)
-        { 
-            cerr << " Dcompute_SZ_signal_combo_CMB :: You are outside of grid \n" << endl;
-            exit(0);
+        if(x<0.01 || x>50.0){ 
+            exit_error("Dcompute_SZ_signal_combo_CMB :: You are outside of grid");
         }
         
-        if(Te>75.0)
-        { 
-            cerr << " Dcompute_SZ_signal_combo_CMB :: Temperature too high/low \n" << endl;
-            exit(0);
+        if(fp.Te>75.0){ 
+            exit_error("Dcompute_SZ_signal_combo_CMB :: Temperature too high: " + to_string(fp.Te) + "keV");
         }
 
-        Dcompute_SZ_distortion_CNSN_basis_CMB(x, k, m, l, Te/const_me, betac, muc, dDn_dThe); 
+        Dcompute_SZ_distortion_CNSN_basis(x, fp, true);
     }
     
-    for(int g=0; g<=k; g++) dDn_dThe[g]*=Dtau;
-    
-    return;
+    for(int g = 0; g <= fp.D.dThe; g++) {fp.D.dDn_dThe[g] *= fp.Dtau;}
+
+    // nb, since Dcompute calculates assuming the tau is constant, and not y, as necessary for y weighting
+    // we must rewrite our The derivatives noting, dDn_dThe[k] = The^k/k! d^k/dThe^k (<tau> The f(nu,The))
+    // and we require, H[k] = The^k/k! d^k/dThe^k (<y> f(nu,The))
+    if(yw) {
+        for(int g = 1; g <= fp.D.dThe; g++) {
+            fp.D.dDn_dThe[g] = fp.D.dDn_dThe[g]-fp.D.dDn_dThe[g-1];
+        }
+    }
 }
 
-
 //==================================================================================================
-// 
-// Expansion of SZ signal around mean values of tau, TeSZ, and betac*muc. This routine should 
-// reproduce the full numerical result for 0.01 < x < 30, Te < 75keV, and beta < 0.01 with 
-// precision similar to 0.001%, assuming smooth cluster profile. (added 6th Aug, 2012, JC)
+//
+// compute x derivatives from the combo method
 //
 //==================================================================================================
-double compute_SZ_signal_combo_means(double xo, 
-                                     // mean parameters
-                                     double tau, double TeSZ, double betac_para,
-                                     // variances
-                                     double omega, double sigma, 
-                                     double kappa, double betac2_perp)
-{
-    vector<double> dDn_dThe;
-    
+
+double Dcompute_signal_combo_for_x(double x0, Parameters fp, int dx){
+    double eps = 0.001;
+    double x_temp = fp.xcmb[0];
+    fp.xcmb[0] = x0;
+    double Ix=pow(x0, 3)*compute_signal_combo(0, fp, true);
+    double xp=x0*(1.0+eps), xm=x0*(1.0-eps);
+    double xp2=x0*(1.0+2*eps), xm2=x0*(1.0-2*eps);
+    fp.xcmb[0] = xp;
+    double Ixp=pow(xp, 3)*compute_signal_combo(0, fp, true);
+    fp.xcmb[0] = xm;
+    double Ixm=pow(xm, 3)*compute_signal_combo(0, fp, true);
+    fp.xcmb[0] = xp2;
+    double Ixp2=pow(xp2, 3)*compute_signal_combo(0, fp, true);
+    fp.xcmb[0] = xm2;
+    double Ixm2=pow(xm2, 3)*compute_signal_combo(0, fp, true);
+    fp.xcmb[0] = x_temp;
+
+    if (dx == 1) {
+        return (-Ixp2+8.0*Ixp-8.0*Ixm+Ixm2)/12.0/eps;
+    }
+    if (dx == 2) {
+        return (-Ixp2+16.0*Ixp-30.0*Ix+16.0*Ixm-Ixm2)/12.0/pow(eps, 2) / (2.0);
+    }
+    if (dx == 3) {
+        return (Ixp2-2.0*Ixp+2.0*Ixm-Ixm2)/2.0/pow(eps, 3) / (6.0);
+    }
+    if (dx == 4) {
+        return (Ixp2-4.0*Ixp+6.0*Ix-4.0*Ixm+Ixm2)/pow(eps, 4) / (24.0);
+    }
+    if (dx != 0) {
+        print_error("Dcompute_signal_combo_for_x: dx not recognised. Must be an integer between 0 and 4 "
+                    "(dx = " + to_string(dx) + ")");
+    }
+    return Ix;
+}
+
+//==================================================================================================
+
+double compute_signal_means(int k, Parameters &fp, bool yw){
     // mean signal + temperature dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 2, 0, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    double r=dDn_dThe[0]+dDn_dThe[2]*omega;
+    fp.D.setValues(2,0,0);
+    Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
     
+    double r = fp.D.dDn_dThe[0]+fp.D.dDn_dThe[2]*fp.means.Omega;
+
     // velocity - temperature cross term
-    if(sigma!=0.0)
+    if(fp.means.Sigma!=0.0)
     {
-        Dcompute_SZ_signal_combo_CMB(xo, 1, 1, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-        r+=dDn_dThe[1]*sigma;
+        fp.D.setValues(1,1,0);
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        r += fp.D.dDn_dThe[1]*fp.means.Sigma;
     }
     
     // betac_parallel dispersion term
-    if(kappa!=0.0)
+    if(fp.means.kappa!=0.0)
     {
-        Dcompute_SZ_signal_combo_CMB(xo, 0, 2, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-        r+=dDn_dThe[0]*kappa;
+        fp.D.setValues(0,2,0);
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        r += fp.D.dDn_dThe[0]*fp.means.kappa;
     }
 
     // betac_perp dispersion term
-    if(betac2_perp!=0.0)
+    if(fp.calc.betac2_perp!=0.0)
     {
-        Dcompute_SZ_signal_combo_CMB(xo, 0, 0, 1, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-        r+=dDn_dThe[0]*betac2_perp;
+        fp.D.setValues(0,0,1);
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        r += fp.D.dDn_dThe[0]*fp.calc.betac2_perp;
     }
-    
     return r;
 }
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo_means(double *xo, int np, 
-                                   // mean parameters
-                                   double tau, double TeSZ, double betac_para,
-                                   // variances
-                                   double omega, double sigma, 
-                                   double kappa, double betac2_perp)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_combo_means(xo[m], tau, TeSZ, betac_para, 
-                                            omega, sigma, kappa, betac2_perp);
-    
-    return;
+double compute_signal_means(double x0, Parameters &fp, bool yw){
+    //For calculating the null value of the signal.
+    double xcmb0 = fp.xcmb[0];
+    fp.xcmb[0] = x0;
+    double dum = compute_signal_means(0,fp,yw);
+    fp.xcmb[0] = xcmb0;
+    return dum;
 }
 
-
-void compute_SZ_signal_combo_means(vector<double> &xo, 
-                                   // mean parameters
-                                   double tau, double TeSZ, double betac_para,
-                                   // variances
-                                   double omega, double sigma, 
-                                   double kappa, double betac2_perp)
-{
-    compute_SZ_signal_combo_means(&xo[0], xo.size(), tau, TeSZ, betac_para, 
-                                  omega, sigma, kappa, betac2_perp);
-    
-    return;
+double compute_signal_means_tw(int k, Parameters &fp){
+    //This uses the dimensionless tau-weighted terms
+    return compute_signal_means(k, fp, false);
 }
 
+double compute_signal_means_yw(int k, Parameters &fp){
+    //This uses the dimensionless y-weighted terms as described in Lee, Chluba, Kay & Barnes 2020
+    return compute_signal_means(k, fp, true);
+}
 
 //==================================================================================================
 // 
@@ -620,21 +284,9 @@ void compute_SZ_signal_combo_means(vector<double> &xo,
 // precision, assuming smooth cluster profile. (added 8th Aug, 2012, JC)
 //
 //==================================================================================================
-double func_SZ_null(double *x, void *p)
-{
-    double *d=(double *)p;
-    return compute_SZ_signal_combo_means(*x, d[0], d[1], d[2], d[3], d[4], d[5], d[6]);
+double compute_null_of_SZ_signal(Parameters fp) {
+    return find_root_brent([&fp](double x0) { return compute_signal_means(x0, fp, false);}, 0.1, 10.0, 1.0e-5);
 }
-
-double compute_null_of_SZ_signal(double tau, double TeSZ, double betac_para,
-                                 double omega, double sigma, 
-                                 double kappa, double betac2_perp)
-{
-    double d[]={tau, TeSZ, betac_para, omega, sigma, kappa, betac2_perp};
-    void *p=(void *)d;
-    return find_root_brent(func_SZ_null, p, 0.1, 10.0, 1.0e-5);
-}
-
 
 //==================================================================================================
 //
@@ -652,138 +304,198 @@ double compute_null_of_SZ_signal(double tau, double TeSZ, double betac_para,
 // (added 29th Aug, 2012, JC)
 //
 //==================================================================================================
-double compute_SZ_signal_combo_means_ex(double xo, 
-                                        // mean parameters
-                                        double tau, double TeSZ, double betac_para,
-                                        // variances
-                                        double omega[3], double sigma[3], 
-                                        double kappa, double betac2_perp)
+double compute_signal_means_ex(int k, Parameters &fp, bool yw)
 {
-    vector<double> dDn_dThe;
-    
     // mean signal + temperature dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 4, 0, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-    double r=dDn_dThe[0]+dDn_dThe[2]*omega[0]+dDn_dThe[3]*omega[1]+dDn_dThe[4]*omega[2];
+    fp.D.setValues(4,0,0);
+    Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+    double r = fp.D.dDn_dThe[0]+fp.D.dDn_dThe[2]*fp.means.omegas[0]+fp.D.dDn_dThe[3]*fp.means.omegas[1]+fp.D.dDn_dThe[4]*fp.means.omegas[2];
     
     // velocity - temperature cross term
-    if(sigma[0]!=0.0 || sigma[1]!=0.0 || sigma[2]!=0.0)
+    if(fp.means.sigmas[0]!=0.0 || fp.means.sigmas[1]!=0.0 || fp.means.sigmas[2]!=0.0)
     {
-        Dcompute_SZ_signal_combo_CMB(xo, 3, 1, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-        r+=dDn_dThe[1]*sigma[0]+dDn_dThe[2]*sigma[1]+dDn_dThe[3]*sigma[2];
+        fp.D.setValues(3,1,0);
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        r += fp.D.dDn_dThe[1]*fp.means.sigmas[0]+fp.D.dDn_dThe[2]*fp.means.sigmas[1]+fp.D.dDn_dThe[3]*fp.means.sigmas[2];
     }
     
     // betac_parallel dispersion term
-    if(kappa!=0.0)
+    if(fp.means.kappa != 0.0)
     {
-        Dcompute_SZ_signal_combo_CMB(xo, 0, 2, 0, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-        r+=dDn_dThe[0]*kappa;
+        fp.D.setValues(0,2,0);
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        r += fp.D.dDn_dThe[0]*fp.means.kappa;
     }
     
     // betac_perp dispersion term
-    if(betac2_perp!=0.0)
+    if(fp.calc.betac2_perp != 0.0)
     {
-        Dcompute_SZ_signal_combo_CMB(xo, 0, 0, 1, tau, TeSZ, betac_para, 1.0, dDn_dThe);
-        r+=dDn_dThe[0]*betac2_perp;
+        fp.D.setValues(0,0,1);
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        r += fp.D.dDn_dThe[0]*fp.calc.betac2_perp;
     }
-    
     return r;    
-}
-
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo_means_ex(double *xo, int np, 
-                                      // mean parameters
-                                      double tau, double TeSZ, double betac_para,
-                                      // variances
-                                      double omega[3], double sigma[3], 
-                                      double kappa, double betac2_perp)
-{
-    for(int m=0; m<np; m++) 
-        xo[m]=compute_SZ_signal_combo_means_ex(xo[m], tau, TeSZ, betac_para, 
-                                               omega, sigma, kappa, betac2_perp);
-    
-    return;
-}
-
-void compute_SZ_signal_combo_means_ex(vector<double> &xo, 
-                                      // mean parameters
-                                      double tau, double TeSZ, double betac_para,
-                                      // variances
-                                      double omega[3], double sigma[3], 
-                                      double kappa, double betac2_perp)
-{
-    compute_SZ_signal_combo_means_ex(&xo[0], xo.size(), tau, TeSZ, betac_para, 
-                                     omega, sigma, kappa, betac2_perp);
-    
-    return;
-}    
+}  
 
 //==================================================================================================
-//
-// y-weighted moment expansion for up to O(The^4) for thSZ only. Using the definition
-// dy = (kTe / mec^2) dtau in the expressions below, we have the parameters
-//
-// y      : y     = int dy               [dimensionless]
-// TeSZ   : TeSZ  = y^-1 int Te dy       [keV  ]
-// TeSZ2  : TeSZ2 = y^-1 int Te^2 dy     [keV^2]
-// TeSZ3  : TeSZ3 = y^-1 int Te^3 dy     [keV^3]
-// TeSZ4  : TeSZ4 = y^-1 int Te^4 dy     [keV^4]
-//
-// The integrals have to be taken along the considered line-of-sight.
-//
-// [added 28.08.2017 JC]
+
+double compute_signal_RelCorrs(int k, Parameters &fp){
+    double dum = compute_signal_combo(k, fp);
+    dum -= compute_signal_nonrelativistic(k, fp);
+    return dum;
+}
+
+double compute_signal_TDispersion(int k, Parameters &fp){
+    double dum=compute_signal_means(k, fp, false);
+
+    double Omega = fp.means.Omega, Sigma = fp.means.Sigma;
+    fp.means.Omega = fp.means.Sigma = 0.0;
+    dum -= compute_signal_means(k, fp, false);
+    fp.means.Omega = Omega;
+    fp.means.Sigma = Sigma;
+    return dum;
+}
+
+void compute_signal_TwoTemperatures(vector<double> &Dn, double ftau, double DT_T, Parameters &fp, 
+                                    bool DI, bool CMBframe){
+    Dn.resize(fp.gridpoints);
+    vector<double> temp1Dn, temp2Dn;
+    
+    Parameters temp1 = Parameters(), temp2 = Parameters();
+    temp1.copyParameters(fp);
+    temp2.copyParameters(fp);
+    temp1.Dtau *= (1.0-ftau);
+    temp2.Dtau *= ftau;
+    temp2.updateT(temp2.Te*(1.0+DT_T));
+
+    compute_signal_combo(temp1Dn, temp1, DI, CMBframe);
+    compute_signal_combo(temp2Dn, temp2, DI, CMBframe);
+    for (int k = 0; k < fp.gridpoints; k++){
+        Dn[k] = temp1Dn[k]+temp2Dn[k];
+    }
+}
+
 //==================================================================================================
-double compute_SZ_signal_combo_means_yw(double xo,
-                                        // mean parameters
-                                        double y, double TeSZ,
-                                        double TeSZ2, double TeSZ3, double TeSZ4)
-{
-    // convert moments to omega_y
-    double The=TeSZ/const_me;
-    double tau=y/The;
-    double oy2=(TeSZ2==0           ? 0 : TeSZ2/pow(TeSZ, 2) - 1.0);
-    double oy3=(TeSZ3==0 || oy2==0 ? 0 : TeSZ3/pow(TeSZ, 3) - 3.0*oy2 - 1.0);
-    double oy4=(TeSZ4==0 || oy3==0 ? 0 : TeSZ4/pow(TeSZ, 4) - 4.0*oy3 - 6.0*oy2 - 1.0);
+// Vector forms of all of the signals
+//==================================================================================================
 
-    vector<double> dDn_dThe;
-    
-    // mean signal + temperature dispersion term
-    Dcompute_SZ_signal_combo_CMB(xo, 4, 0, 0, tau, TeSZ, 0.0, 1.0, dDn_dThe);
-    
-    double H0= dDn_dThe[0];
-    double H2=(dDn_dThe[2]-dDn_dThe[1]+dDn_dThe[0]);
-    double H3=(dDn_dThe[3]-dDn_dThe[2]+dDn_dThe[1]-dDn_dThe[0]);
-    double H4=(dDn_dThe[4]-dDn_dThe[3]+dDn_dThe[2]-dDn_dThe[1]+dDn_dThe[0]);
-    
-    double r=H0+H2*oy2+H3*oy3+H4*oy4;
-    
-    return r;
+void compute_signal_nonrelativistic(vector<double> &Dn, Parameters &fp, bool DI){
+    compute_SZ_distortion_nonrelativistic(Dn, fp, DI);
 }
 
-//--------------------------------------------------------------------------------------------------
-// vector versions (output is returned in xo-vector)
-//--------------------------------------------------------------------------------------------------
-void compute_SZ_signal_combo_means_yw(double *xo, int np,
-                                      // mean parameters
-                                      double y, double TeSZ,
-                                      double TeSZ2, double TeSZ3, double TeSZ4)
-{
-    for(int m=0; m<np; m++)
-        xo[m]=compute_SZ_signal_combo_means_yw(xo[m], y, TeSZ, TeSZ2, TeSZ3, TeSZ4);
-    
-    return;
+void compute_signal_5D(vector<double> &Dn, Parameters &fp, bool DI){
+    compute_SZ_distortion_Patterson_5D(Dn, fp, DI);
 }
 
+void compute_signal_3D(vector<double> &Dn, Parameters &fp, bool DI){
+    compute_SZ_distortion_Patterson_3D(Dn, fp, DI);
+}
 
-void compute_SZ_signal_combo_means_yw(vector<double> &xo,
-                                      // mean parameters
-                                      double y, double TeSZ,
-                                      double TeSZ2, double TeSZ3, double TeSZ4)
-{
-    compute_SZ_signal_combo_means_yw(&xo[0], xo.size(), y, TeSZ, TeSZ2, TeSZ3, TeSZ4);
-    
-    return;
+void compute_signal_asymptotic(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe){
+    compute_SZ_distortion_asymptotic(Dn, fp, DI, CMBframe); 
+}
+
+void compute_signal_CNSN(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe){
+    compute_SZ_distortion_CNSN_basis(Dn, fp, DI, CMBframe); 
+}
+
+void compute_signal_CNSN_opt(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe){
+    compute_SZ_distortion_CNSN_basis_opt(Dn, fp, DI, CMBframe); 
+}
+
+void compute_signal_combo(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe){
+    if(fp.Te<2.0){
+        fp.T_order = 10;
+        fp.beta_order = 2;
+        compute_SZ_distortion_asymptotic(Dn, fp, DI, CMBframe); 
+    }
+    else{
+        fp.T_order = 20;
+        fp.beta_order = 2;
+        compute_SZ_distortion_CNSN_basis(Dn, fp, DI, CMBframe); 
+    }
+}
+
+void compute_signal_precise(vector<double> &Dn, Parameters &fp, bool DI){
+    if (fp.Te > 75){ compute_signal_3D(Dn, fp, DI); }
+    else{ compute_signal_combo(Dn, fp, DI, false); }
+}
+
+void compute_signal_means(vector<double> &Dn, Parameters &fp, bool DI, bool yw){
+    Dn.resize(fp.gridpoints);
+    for (int k = 0; k < fp.gridpoints; k++){
+        Dn[k] = compute_signal_means(k, fp, yw);
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
+    }
+}
+
+void compute_signal_means_ex(vector<double> &Dn, Parameters &fp, bool DI, bool yw){
+    Dn.resize(fp.gridpoints);
+    for (int k = 0; k < fp.gridpoints; k++){
+        Dn[k] = compute_signal_means_ex(k, fp, yw);
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
+    }
+}
+
+void compute_signal_RelCorrs(vector<double> &Dn, Parameters &fp, bool DI){
+    Dn.resize(fp.gridpoints);
+    for (int k = 0; k < fp.gridpoints; k++){
+        Dn[k] = compute_signal_RelCorrs(k, fp);
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
+    }
+}
+
+void compute_signal_TDispersion(vector<double> &Dn, Parameters &fp, bool DI){
+    Dn.resize(fp.gridpoints);
+    for (int k = 0; k < fp.gridpoints; k++){
+        Dn[k] = compute_signal_TDispersion(k, fp);
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
+    }
+}
+
+void Dcompute_signal_combo_CMB(vector<double> &Dn, Parameters &fp, 
+                               int dThe, int dbeta_para, int dbeta2_perp, bool yw, bool DI){
+    Dn.resize(fp.gridpoints);
+    fp.D.dThe = dThe;
+    fp.D.dbeta_para = dbeta_para;
+    fp.D.dbeta2_perp = dbeta2_perp;
+    for (int k=0; k< fp.gridpoints; k++){
+        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dn[k] = fp.D.dDn_dThe[dThe];     
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
+    }
+}
+
+void Dcompute_signal_combo_for_x(vector<double> &Dn, Parameters fp, int dx){
+    Dn.resize(fp.gridpoints);
+    for (int k=0; k< fp.gridpoints; k++){
+        Dn[k] = Dcompute_signal_combo_for_x(fp.xcmb[k], fp, dx)*fp.rare.Dn_DI_conversion();
+    }
+}
+
+//==================================================================================================
+// Vector methods to transform the signal from DI/Dn to DT/Tcmb
+// i.e., the signal expressed as variations to the cmb temperature
+// Note these take Dn and not DI.
+//==================================================================================================
+
+// This method converts through an inversion of the boltzmann distribution at each frequency.
+void convert_signal_DT(vector<double> &DT, vector<double> xcmb, vector<double> Dn){
+    int np = xcmb.size();
+    DT.resize(np);
+    for (int k = 0; k < np; k++){
+        double expxMinusOne = exp(xcmb[k])-1;
+        DT[k] = (xcmb[k]/log((expxMinusOne/(1+expxMinusOne*Dn[k]))+1))-1;
+    }
+}
+
+// This method converts by using the first derivative and ignoring higher order terms.
+void convert_signal_DT_approx(vector<double> &DT, vector<double> xcmb, vector<double> Dn){
+    int np = xcmb.size();
+    DT.resize(np);
+    for (int k = 0; k < np; k++){
+        DT[k] = Dn[k]*(exp(xcmb[k])-1)*(exp(xcmb[k])-1)/xcmb[k]/exp(xcmb[k]);
+    }
 }
 
 //==================================================================================================

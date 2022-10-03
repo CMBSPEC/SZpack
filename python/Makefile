@@ -1,23 +1,16 @@
-#===================================================================================================
-# rules 
-#===================================================================================================
+all:
+	python setup.py build_ext --inplace
+#	python setup.py install
+#	pip install .
 
-all: clean SZpack.py
-
-SZpack.py: libSZpack.a
-	     @echo "\n Creating SZpack Python routines\n" 
-		 python setup.py build
-		 python setup.py install --user
-	     
-libSZpack.a:
-	     cd ../; make lib;
-	     
 clean:
-	     rm -rf build
-		 rm -f SZpack.py SZpack.pyc SZpack_wrap.cpp *.pyc
-	     
-cleanall: clean
-	     cd ..; make tidy;
-	      
-#===================================================================================================
-#===================================================================================================
+	rm -f *.so
+	rm -rf ./build
+
+cleanall:
+	rm -f *.so
+	rm -f  ./SZpack/*.so
+	rm -rf ./build
+	rm -rf ./dist
+	rm -rf ./SZpack.egg-info
+	rm -rf ./SZpack/__pycache__ ./SZpack/build
