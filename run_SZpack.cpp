@@ -118,6 +118,12 @@ int main(int narg, char *args[])
     {
         output_SZ_distortion(modes.Int3D);
     }
+
+    else if(parameters.mode=="Kernel")
+    {
+        //output_SZ_distortion(modes.Kernel);
+        //TODO: Sort this
+    }
     
     else if(parameters.mode=="ASYM")
     {

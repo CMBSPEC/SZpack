@@ -91,7 +91,7 @@ class IntegralCNSNopt{
     IntegralCNSNopt(double x_i, double The_i, double betac_i, double muc_i, int kmax_i, int accuracy_level, int betac_order_i, bool CMB);
     IntegralCNSNopt(int kmax, int accuracy_level); //For Accuracy settings only
     IntegralCNSNopt(double x_i, int region, int Te_order_i); //for calculating the basis functions
-    IntegralCNSNopt(int k, Parameters fp, bool CMB);
+    IntegralCNSNopt(double x_i, Parameters fp, bool CMB);
     void Update_x(double x_i);
 
     private:
@@ -141,8 +141,15 @@ void compute_SZ_distortion_CNSN_basis_opt(vector<double> &Dn, vector<double> x,
                                           double The, double betac, double muc, int kmax, int betac_order,
                                           string mode, int accuracy_level, bool DI, bool CMBframe = true); 
 
-double compute_SZ_distortion_CNSN_basis_opt(int k, Parameters fp, bool CMBframe = true);
+double compute_SZ_distortion_CNSN_basis_opt(double x, Parameters fp, bool CMBframe = true);
 void compute_SZ_distortion_CNSN_basis_opt(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe = true);
+
+//==================================================================================================
+//TODO: These are only used in SZ_moment_method. May be able to write this code better to remove the need for these functions.
+//==================================================================================================
+vector<double> Get_temperature_regions(int kmax, int accuracy_level);
+vector<int> Get_region_indices (int kmax, int accuracy_level);
+vector<double> Get_temperature_pivots (int kmax, int accuracy_level);
 
 //==================================================================================================
 // computes the optimal value for kmax given the accuracy goal and required maximal temperature

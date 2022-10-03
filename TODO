@@ -1,5 +1,4 @@
-- finish beam averaging procedure
-- add python setup with opt moment method; this might be a bit faster
-  than the full CNSN basis set
-- clean up run_SZ_moment_method.cpp + SZpack.h (only the really approved 
-  functions should be directly included there)
+- Clean up multiple scattering
+- Clean up moment method
+- Fix up non-thermal SZ package
+- Check TODOs left within Code

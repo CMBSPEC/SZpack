@@ -54,7 +54,7 @@ class IntegralAsymptotic{
     IntegralAsymptotic(double x_i, double The_i, double betac_i, double muc_i, int Te_order_i, int betac_order_i, bool CMB);
     IntegralAsymptotic(double x_i, double The_i, double betac_i, double muc_i, bool CMB);
     IntegralAsymptotic(double x_i, bool CMB);
-    IntegralAsymptotic(int k, Parameters fp, bool CMB, bool inputOrders=true);
+    IntegralAsymptotic(double x_i, Parameters fp, bool CMB, bool inputOrders=true);
     void Update_x(double x_i);
     
     private:
@@ -91,7 +91,6 @@ class IntegralAsymptotic{
     void Dcompute_distortion(int dThe, int dbeta_para, int dbeta2_perp, vector<double> &dDn);
 };
 
-
 //==================================================================================================
 //
 // compute Dn using asymptotic expansion in cluster frame
@@ -111,7 +110,7 @@ void compute_SZ_distortion_asymptotic(vector<double> &Dn, vector<double> x,
                                       double The, double betac, double muc, int Te_order, int betac_order,
                                       string mode, bool DI, bool CMBframe = true);                                 
 
-double compute_SZ_distortion_asymptotic(int k, Parameters fp, bool CMBframe = false);
+double compute_SZ_distortion_asymptotic(double x, Parameters fp, bool CMBframe = false);
 void compute_SZ_distortion_asymptotic(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe = false);
 
 //==================================================================================================
@@ -126,6 +125,17 @@ void Dcompute_SZ_distortion_asymptotic(double x, int dThe, int dbeta_para, int d
                                        vector<double> &dDn_dThe, bool CMBframe = true);
 
 void Dcompute_SZ_distortion_asymptotic(double x, Parameters &fp, bool CMBframe);
+
+//==================================================================================================
+//
+// access basis functions (added 10.07 by JC)
+//
+//==================================================================================================
+//TODO: These should really be reformed when sorting SZ_moment_method and output_multiple scattering
+void compute_Y_asymptotic(double x, vector<double> &Y, bool CMBframe = true);
+void compute_Mcorr_asymptotic(double x, vector<double> &Mc, bool CMBframe = true);
+void compute_D_asymptotic(double x, vector<double> &D, bool CMBframe = true);
+void compute_Q_asymptotic(double x, vector<double> &Q, bool CMBframe = true);
 
 #endif
 

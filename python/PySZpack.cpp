@@ -13,6 +13,8 @@ void init_ex_CNSN(py::module_ &);
 void init_ex_3d(py::module_ &);
 void init_ex_5d(py::module_ &);
 void init_ex_nonrel(py::module_ &);
+void init_ex_kernel(py::module_ &);
+void init_ex_e_dists(py::module_ &);
 void init_ex_nT_asym(py::module_ &);
 
 PYBIND11_MODULE(SZpack, m) {
@@ -195,13 +197,13 @@ PYBIND11_MODULE(SZpack, m) {
                         return py::array(DT.size(), DT.data());}, "xcmb"_a, "Dn"_a,
                         "A function to convert the Dn signal to DT/TCMB i.e., (the effective change CMB temperature)/(CMB temperature) at a given "
                         "frequency. This function inverts the boltzmann distribution to calculate the conversion accurately. " 
-                        "Note this takes in Dn and not DI.");
+                        "Note this takes Dn and not DI.");
     
     m.def("convert_signal_DT_approx", [](vector<double> xcmb, vector<double> Dn){vector<double> DT; convert_signal_DT_approx(DT, xcmb, Dn);
                         return py::array(DT.size(), DT.data());}, "xcmb"_a, "Dn"_a,
                         "A function to convert the Dn signal to DT/TCMB i.e., (the effective change CMB temperature)/(CMB temperature) at a given "
                         "frequency. This function uses a conventional approximation from the first derivative of the boltzmann distribution. "
-                        "Note this takes in Dn and not DI.");
+                        "Note this takes Dn and not DI.");
 
     py::module asym = m.def_submodule("Asymptotic", "The submodule for some specific asymptotic method functions.");
     init_ex_asymptotic(asym);
@@ -215,6 +217,12 @@ PYBIND11_MODULE(SZpack, m) {
     init_ex_5d(int5d);
     py::module nonrel = m.def_submodule("Nonrelativistic", "The submodule for some specific nonrelativistic method functions.");
     init_ex_nonrel(nonrel);
+    py::module kernel = m.def_submodule("MultipoleKernel", "An extension submodule to calculate the SZ signal for user defined electron distributions "
+        "and higher order multipoles. (See Lee et al. 2021 for more details.)");
+    init_ex_kernel(kernel);
+    py::module eDist = m.def_submodule("ElectronDistributions", "An extension submodule to pair with the MultipoleKernel module. This defines some "
+        "preset electron distributions that might be of interest. (See Lee et al. 2021 for more details.)");
+    init_ex_e_dists(eDist);
     py::module nTasym = m.def_submodule("nT_asymptotic", "An extension submodule to calculate the SZ signal for user defined background photon "
         "distributions, i.e., alternatives to the CMB backlight. (See Lee et al. 2021 for more details.)");
     init_ex_nT_asym(nTasym);

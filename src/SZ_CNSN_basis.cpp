@@ -129,8 +129,8 @@ IntegralCNSN::IntegralCNSN(double x_i, double The_i, double betac_i, double muc_
     : IntegralCNSN(x_i, The_i, betac_i, muc_i, 20, 2, CMB) {}
 
 
-IntegralCNSN::IntegralCNSN(int k, Parameters fp, bool CMB, bool inputOrders)
-    : IntegralCNSN((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0)*fp.xcmb[k], fp.calc.The, fp.betac, 
+IntegralCNSN::IntegralCNSN(double x_i, Parameters fp, bool CMB, bool inputOrders)
+    : IntegralCNSN((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0)*x_i, fp.calc.The, fp.betac, 
                    CMB ? fp.muc : fp.calc.mucc, inputOrders ? fp.T_order : 20, inputOrders ? fp.beta_order : 2, CMB) {}
 
 void IntegralCNSN::Update_x(double x_i){
@@ -395,14 +395,14 @@ void compute_SZ_distortion_CNSN_basis(vector<double> &Dn, vector<double> x,
     }
 }
 
-double compute_SZ_distortion_CNSN_basis(int k, Parameters fp, bool CMBframe){
-    IntegralCNSN szDistortion = IntegralCNSN(fp.k_inRange(k), fp, CMBframe);
+double compute_SZ_distortion_CNSN_basis(double x, Parameters fp, bool CMBframe){
+    IntegralCNSN szDistortion = IntegralCNSN(x, fp, CMBframe);
     return szDistortion.compute_distortion(fp.rare.RunMode);
 }
 
 void compute_SZ_distortion_CNSN_basis(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe){
     Dn.resize(fp.gridpoints);
-    IntegralCNSN szDistortion = IntegralCNSN(0, fp, CMBframe);
+    IntegralCNSN szDistortion = IntegralCNSN(fp.xcmb[0], fp, CMBframe);
     Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
     for(int k = 1; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
@@ -427,8 +427,7 @@ void Dcompute_SZ_distortion_CNSN_basis(double x,
 }
 
 void Dcompute_SZ_distortion_CNSN_basis(double x, Parameters &fp, bool CMBframe){
-    IntegralCNSN szDistortion = IntegralCNSN(0, fp, CMBframe, false);
-    szDistortion.Update_x(x);
+    IntegralCNSN szDistortion = IntegralCNSN(x, fp, CMBframe, false);
     szDistortion.Dcompute_distortion(fp.D.dThe, fp.D.dbeta_para, fp.D.dbeta2_perp, fp.D.dDn_dThe);
 }
 //==================================================================================================

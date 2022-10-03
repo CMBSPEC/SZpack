@@ -9,9 +9,9 @@ namespace py = pybind11;
 void init_ex_5d(py::module_ &m){
     py::class_<Integral5D>(m, "class_integral_5D", py::module_local())
         .def(py::init<>())
-        .def("set_from_params", [](Integral5D &a, int k, Parameters fp){
-                        a = Integral5D(k, fp);}, "k"_a, "Params"_a, 
-                        "A function to initialise the class from a parameters class. k is the index of xcmb that will be calculated.")
+        .def("set_from_params", [](Integral5D &a, double x, Parameters fp){
+                        a = Integral5D(x, fp);}, "x"_a, "Params"_a, 
+                        "A function to initialise the class from a parameters class.")
         .def("set_from_variables", [](Integral5D &a, double x_i, double The_i, double betac_i, double muc_i, double eps_Int){
                         a = Integral5D(x_i, The_i, betac_i, muc_i, eps_Int);},
                         "x"_a, "The"_a, "betac"_a, "muc"_a, "relative_accuracy"_a, 

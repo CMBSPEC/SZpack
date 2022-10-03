@@ -16,6 +16,8 @@ void init_ex_params(py::module_ &m){
         .def("set_x_array", &Parameters::Set_x, "A function to set the xcmb array, x = (h*nu)/(kB*TCMB).", "x_min"_a, "x_max"_a, "gridpoints"_a)
         .def("set_x_from_nu", &Parameters::Set_x_from_nu, "A function to set the xcmb array from frequency values in GHz", 
                 "nu_min"_a, "nu_max"_a, "gridpoints"_a)
+        .def("set_s_array", &Parameters::Set_s, "A function to set the s_array. Used only in some of the kernel methods.", 
+                "s_min"_a, "s_max"_a, "gridpoints"_a)
         .def("check_values", &Parameters::CheckValues, "A function that checks all the values set for Parameters. "
                 "Returns false if there are values that will not function elsewhere. This function will fix some rarer values to default values. "
                 "Pay attention to the error messages.")
@@ -66,6 +68,14 @@ void init_ex_params(py::module_ &m){
                 "omega0"_a, "omega1"_a, "omega2"_a, "A function to set the values for means_omegas.")
         .def("means_assign_sigmas", [](Parameters &a, double sigma0, double sigma1, double sigma2) {a.means.assignSigmas(sigma0, sigma1, sigma2);}, 
                 "sigma0"_a, "sigma1"_a, "sigma2"_a, "A function to set the values for means_sigmas.")
+        .def_property("kernel_l", [](const Parameters &a) {return a.kernel.l;}, [](Parameters &a, int l) {a.kernel.l = l;}, 
+                "The multipole (with respect to mu_sc) to be calculated. Used only in kernel methods.")
+        .def_property_readonly("kernel_smin", [](const Parameters &a) {return a.kernel.smin;}, 
+                "The minimum value of s = ln(omega/omega0), omega = (h nu)/(kB Te). Used only in kernel methods.")
+        .def_property_readonly("kernel_smax", [](const Parameters &a) {return a.kernel.smax;}, 
+                "The maximum value of s = ln(omega/omega0), omega = (h nu)/(kB Te). Used only in kernel methods.")
+        .def_property_readonly("kernel_s_array", [](const Parameters &a) {return a.kernel.srange;}, 
+                "The array of values of s = ln(omega/omega0), omega = (h nu)/(kB Te). Used only in kernel methods.")
         .def_property("runmode", [](const Parameters &a) {return a.rare.RunMode;}, [](Parameters &a, string runMode) {a.rare.RunMode = runMode;},
                 "The runmode the distortion is calculated under. There are 7 modes recognised: \n"
                 "\"monopole\": Only scattering of the monopole without the second order kinetic correction. i.e., O(betac^0 muc^0).\n"

@@ -9,9 +9,9 @@ namespace py = pybind11;
 void init_ex_CNSNopt(py::module_ &m){
     py::class_<IntegralCNSNopt>(m, "class_CNSNopt", py::module_local())
         .def(py::init<>())
-        .def("set_from_params", [](IntegralCNSNopt &a, int k, Parameters fp, bool CMBframe){
-                        a = IntegralCNSNopt(k, fp, CMBframe);}, "k"_a, "Params"_a, "CMBframe"_a, 
-                        "A function to initialise the class from a parameters class. k is the index of xcmb that will be calculated.")
+        .def("set_from_params", [](IntegralCNSNopt &a, double x, Parameters fp, bool CMBframe){
+                        a = IntegralCNSNopt(x, fp, CMBframe);}, "x"_a, "Params"_a, "CMBframe"_a, 
+                        "A function to initialise the class from a parameters class.")
         .def("set_from_variables", [](IntegralCNSNopt &a, double x_i, double The_i, double betac_i, double muc_i, 
                         int kmax_i, int accuracy_level_i, int betac_order_i, bool CMBframe){
                         a = IntegralCNSNopt(x_i, The_i, betac_i, muc_i, kmax_i, accuracy_level_i, betac_order_i, CMBframe);},

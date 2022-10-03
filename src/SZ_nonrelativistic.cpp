@@ -28,8 +28,8 @@ IntegralNonRelativistic::IntegralNonRelativistic(double x_i, double The_i, doubl
     run_mode = "";
 }
 
-IntegralNonRelativistic::IntegralNonRelativistic(int k, Parameters fp)
-    : IntegralNonRelativistic(fp.xcmb[k], fp.calc.The, fp.betac, fp.muc) {}
+IntegralNonRelativistic::IntegralNonRelativistic(double x_i, Parameters fp)
+    : IntegralNonRelativistic(x_i, fp.calc.The, fp.betac, fp.muc) {}
 
 void IntegralNonRelativistic::Update_x(double x_i){
     x = x_i;
@@ -111,14 +111,14 @@ void compute_SZ_distortion_nonrelativistic(vector<double> &Dn, vector<double> &x
     }
 }
 
-double compute_SZ_distortion_nonrelativistic(int k, Parameters fp){
-    IntegralNonRelativistic szDistortion = IntegralNonRelativistic(fp.k_inRange(k), fp);
+double compute_SZ_distortion_nonrelativistic(double x, Parameters fp){
+    IntegralNonRelativistic szDistortion = IntegralNonRelativistic(x, fp);
     return szDistortion.compute_distortion(fp.rare.RunMode);
 }
 
 void compute_SZ_distortion_nonrelativistic(vector<double> &Dn, Parameters &fp, bool DI){
     Dn.resize(fp.gridpoints);
-    IntegralNonRelativistic szDistortion = IntegralNonRelativistic(0, fp);
+    IntegralNonRelativistic szDistortion = IntegralNonRelativistic(fp.xcmb[0], fp);
     Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
     for(int k = 1; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);

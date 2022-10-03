@@ -9,9 +9,9 @@ namespace py = pybind11;
 void init_ex_nonrel(py::module_ &m){
     py::class_<IntegralNonRelativistic>(m, "class_nonrelativistic", py::module_local())
         .def(py::init<>())
-        .def("set_from_params", [](IntegralNonRelativistic &a, int k, Parameters fp){
-                        a = IntegralNonRelativistic(k, fp);}, "k"_a, "Params"_a, 
-                        "A function to initialise the class from a parameters class. k is the index of xcmb that will be calculated.")
+        .def("set_from_params", [](IntegralNonRelativistic &a, double x, Parameters fp){
+                        a = IntegralNonRelativistic(x, fp);}, "x"_a, "Params"_a, 
+                        "A function to initialise the class from a parameters class.")
         .def("set_from_variables", [](IntegralNonRelativistic &a, double x_i, double The_i, double betac_i, double muc_i){
                         a = IntegralNonRelativistic(x_i, The_i, betac_i, muc_i);},
                         "x"_a, "The"_a, "betac"_a, "muc"_a, "A function to initialise the class from variables.")

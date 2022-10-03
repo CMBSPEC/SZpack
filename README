@@ -131,7 +131,7 @@ both at CITA and JHU. The main (approved) functions of the library are defined i
 ./runfiles    some example runfile with parameters to call 'run_SZpack'
 
 ./python      A full pybind11 python wrapper can be found here. A exploration of the python 
-              functionality can be found in PySZpack.ipynb.
++              functionality can be found in PySZpack.ipynb.
 
 //==================================================================================================
 

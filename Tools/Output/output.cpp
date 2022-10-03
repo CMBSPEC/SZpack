@@ -99,6 +99,23 @@ void output_SZ_distortion(method Method, Parameters functionParameters)
     ofile.close();
 }
 
+void output_SZ_kernel(method Method, Parameters functionParameters)
+{ //TODO: This is probably curently wrong. To be examined more closely.
+    ofstream ofile;
+    SetUpOutput("Carrying out ", Method, functionParameters, ofile);
+    ofile << "#\n# Output format: x = (h nu/k T0) | nu [GHz] | x^3 Dn(x) | DI(x) in MJy/sr " << endl;
+
+    double TCMB = functionParameters.rare.TCMB(), unit_conversion = functionParameters.rare.Dn_DI_conversion();
+
+    for(int k = 0; k < functionParameters.gridpoints; k++)
+    {
+        double dum = Method.modeFunction(k, functionParameters);
+        output_to_file(ofile, functionParameters.kernel.srange[k], dum, TCMB, unit_conversion);
+    }
+    
+    ofile.close();
+}
+
 //==================================================================================================
 //
 // compute precision of method. This returns a fiducially weighted accuracy.
@@ -126,7 +143,7 @@ void compute_precision_of_basis(double Te, method Method, Parameters fp, somestr
     {
         fp.T_order = m;
         for(int k = 0; k < fp.gridpoints; k++) {
-            ya[k] = pow(fp.xcmb[k], 3)*Method.modeFunction(k, fp);
+            ya[k] = pow(fp.xcmb[k], 3)*Method.modeFunction(fp.xcmb[k], fp);
         }
         //==============================================================
         // find maximal absolute deviation and save to file

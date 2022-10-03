@@ -38,8 +38,8 @@ Integral5D::Integral5D(double x_i, double The_i, double betac_i, double muc_i, d
     xfac = 1.0;
 }
 
-Integral5D::Integral5D(int k, Parameters fp)
-    : Integral5D(fp.calc.xfac*fp.xcmb[k], fp.calc.The, fp.betac, fp.calc.mucc, fp.relative_accuracy) {
+Integral5D::Integral5D(double x_i, Parameters fp)
+    : Integral5D(fp.calc.xfac*x_i, fp.calc.The, fp.betac, fp.calc.mucc, fp.relative_accuracy) {
         xfac = fp.calc.xfac;
     }
 
@@ -232,14 +232,14 @@ void compute_SZ_distortion_Patterson_5D(vector<double> &Dn, vector<double> x,
     }
 }
 
-double compute_SZ_distortion_Patterson_5D(int k, Parameters fp){
-    Integral5D szDistortion = Integral5D(fp.k_inRange(k), fp);
+double compute_SZ_distortion_Patterson_5D(double x, Parameters fp){
+    Integral5D szDistortion = Integral5D(x, fp);
     return szDistortion.compute_distortion(fp.rare.RunMode);
 }
 
 void compute_SZ_distortion_Patterson_5D(vector<double> &Dn, Parameters fp, bool DI){
     Dn.resize(fp.gridpoints);
-    Integral5D szDistortion = Integral5D(0, fp);
+    Integral5D szDistortion = Integral5D(fp.xcmb[0], fp);
     Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
     for(int k = 1; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);

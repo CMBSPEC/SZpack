@@ -72,7 +72,7 @@ class IntegralCNSN{
     IntegralCNSN(double xfac_i, double x_i, double The_i, double betac_i, double muc_i, int Te_order_i, int betac_order_i, bool CMB);
     IntegralCNSN(double x_i, double The_i, double betac_i, double muc_i, int Te_order_i, int betac_order_i, bool CMB);
     IntegralCNSN(double x_i, double The_i, double betac_i, double muc_i, bool CMB);
-    IntegralCNSN(int k, Parameters fp, bool CMB, bool inputOrders=true);
+    IntegralCNSN(double x_i, Parameters fp, bool CMB, bool inputOrders=true);
     void Update_x(double x_i);
 
     private:
@@ -123,7 +123,7 @@ void compute_SZ_distortion_CNSN_basis(vector<double> &Dn, vector<double> x,
                                       double The, double betac, double muc, int Te_order, int betac_order,
                                       string mode, bool DI, bool CMBframe = true); 
 
-double compute_SZ_distortion_CNSN_basis(int k, Parameters fp, bool CMBframe = false);
+double compute_SZ_distortion_CNSN_basis(double x_i, Parameters fp, bool CMBframe = false);
 void compute_SZ_distortion_CNSN_basis(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe = false);
 
 //==================================================================================================

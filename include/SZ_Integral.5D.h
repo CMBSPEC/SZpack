@@ -44,7 +44,7 @@ class Integral5D{
     public:
     Integral5D();
     Integral5D(double x_i, double The_i, double betac_i, double muc_i, double eps_Int_i);
-    Integral5D(int k, Parameters fp);
+    Integral5D(double x_i, Parameters fp);
     void Update_x(double x_i);
 
     private:
@@ -85,7 +85,7 @@ void compute_SZ_distortion_Patterson_5D(vector<double> &Dn, vector<double> x,
                                         double The, double betac, double muc, double eps_Int,
                                         string mode, bool DI);
 
-double compute_SZ_distortion_Patterson_5D(int k, Parameters fp);
+double compute_SZ_distortion_Patterson_5D(double x, Parameters fp);
 void compute_SZ_distortion_Patterson_5D(vector<double> &Dn, Parameters fp, bool DI);
 
 #endif

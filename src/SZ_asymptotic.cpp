@@ -242,8 +242,8 @@ IntegralAsymptotic::IntegralAsymptotic(double x_i, double The_i, double betac_i,
 IntegralAsymptotic::IntegralAsymptotic(double x_i, bool CMB)
     : IntegralAsymptotic(x_i, 1.0, 0.0, 0.0, 10, 2, CMB) {}
 
-IntegralAsymptotic::IntegralAsymptotic(int k, Parameters fp, bool CMB, bool inputOrders) 
-    : IntegralAsymptotic((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0), fp.xcmb[k], fp.calc.The, fp.betac, 
+IntegralAsymptotic::IntegralAsymptotic(double x_i, Parameters fp, bool CMB, bool inputOrders) 
+    : IntegralAsymptotic((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0), x_i, fp.calc.The, fp.betac, 
                           CMB ? fp.muc : fp.calc.mucc, inputOrders ? fp.T_order : 10, inputOrders ? fp.beta_order : 2, CMB) {}
 
 void IntegralAsymptotic::Update_x(double x_i){
@@ -558,14 +558,14 @@ void compute_SZ_distortion_asymptotic(vector<double> &Dn, vector<double> x,
     }
 }
 
-double compute_SZ_distortion_asymptotic(int k, Parameters fp, bool CMBframe){
-    IntegralAsymptotic szDistortion = IntegralAsymptotic(fp.k_inRange(k), fp, CMBframe);
+double compute_SZ_distortion_asymptotic(double x, Parameters fp, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x, fp, CMBframe);
     return szDistortion.compute_distortion(fp.rare.RunMode);
 }
 
 void compute_SZ_distortion_asymptotic(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe){
     Dn.resize(fp.gridpoints);
-    IntegralAsymptotic szDistortion = IntegralAsymptotic(0, fp, CMBframe);
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(fp.xcmb[0], fp, CMBframe);
     Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
     for(int k = 1; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
@@ -589,7 +589,23 @@ void Dcompute_SZ_distortion_asymptotic(double x, int dThe, int dbeta_para, int d
 }
 
 void Dcompute_SZ_distortion_asymptotic(double x, Parameters &fp, bool CMBframe){
-    IntegralAsymptotic szDistortion = IntegralAsymptotic(0, fp, CMBframe, false);
-    szDistortion.Update_x(x);
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x, fp, CMBframe, false);
     szDistortion.Dcompute_distortion(fp.D.dThe, fp.D.dbeta_para, fp.D.dbeta2_perp, fp.D.dDn_dThe);
+}
+
+void compute_Y_asymptotic(double x, vector<double> &Y, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x,CMBframe);
+    Y = szDistortion.Y;
+}
+void compute_Mcorr_asymptotic(double x, vector<double> &Mcorr, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x,CMBframe);
+    Mcorr = szDistortion.Mcorr;
+}
+void compute_D_asymptotic(double x, vector<double> &D, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x,CMBframe);
+    D = szDistortion.D;
+}
+void compute_Q_asymptotic(double x, vector<double> &Q, bool CMBframe){
+    IntegralAsymptotic szDistortion = IntegralAsymptotic(x,CMBframe);
+    Q = szDistortion.Q;
 }

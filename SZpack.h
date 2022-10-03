@@ -89,22 +89,22 @@ static bool CNSN2012_convention;
 
 void setConvention(bool UseNozawaConvention);
 
-double compute_signal_nonrelativistic(int k, Parameters &functionParameters);
-double compute_signal_5D(int k, Parameters &functionParameters);
-double compute_signal_3D(int k, Parameters &functionParameters);
-//double compute_signal_Kernel(int k, Parameters &functionParameters);
-double compute_signal_asymptotic(int k, Parameters &functionParameters, bool CMBframe);
-double compute_signal_asymptotic(int k, Parameters &functionParameters);
-double compute_signal_CNSN(int k, Parameters &functionParameters, bool CMBframe);
-double compute_signal_CNSN(int k, Parameters &functionParameters);
-double compute_signal_CNSN_opt(int k, Parameters &functionParameters);
-double compute_signal_combo(int k, Parameters &functionParameters, bool CMBframe);
-double compute_signal_combo(int k, Parameters &functionParameters);
-double compute_signal_means(int k, Parameters &functionParameters, bool yw);
-double compute_signal_means_tw(int k, Parameters &functionParameters);
-double compute_signal_means_yw(int k, Parameters &functionParameters);
-double compute_signal_RelCorrs(int k, Parameters &functionParameters);
-double compute_signal_TDispersion(int k, Parameters &functionParameters);
+double compute_signal_nonrelativistic(double x, Parameters &functionParameters);
+double compute_signal_5D(double x, Parameters &functionParameters);
+double compute_signal_3D(double x, Parameters &functionParameters);
+//double compute_signal_Kernel(double x, Parameters &functionParameters);
+double compute_signal_asymptotic(double x, Parameters &functionParameters, bool CMBframe);
+double compute_signal_asymptotic(double x, Parameters &functionParameters);
+double compute_signal_CNSN(double x, Parameters &functionParameters, bool CMBframe);
+double compute_signal_CNSN(double x, Parameters &functionParameters);
+double compute_signal_CNSN_opt(double x, Parameters &functionParameters);
+double compute_signal_combo(double x, Parameters &functionParameters, bool CMBframe);
+double compute_signal_combo(double x, Parameters &functionParameters);
+double compute_signal_means(double x, Parameters &functionParameters, bool yw);
+double compute_signal_means_tw(double x, Parameters &functionParameters);
+double compute_signal_means_yw(double x, Parameters &functionParameters);
+double compute_signal_RelCorrs(double x, Parameters &functionParameters);
+double compute_signal_TDispersion(double x, Parameters &functionParameters);
 
 //==================================================================================================
 // Derivatives (The^k d^k_dThe /k!) (d^m_dbetapara /m!) (d^l_beta2perp /l!) S(...)
@@ -146,7 +146,7 @@ double compute_null_of_SZ_signal(Parameters fp);
 // (added 29th Aug, 2012, JC)
 //
 //==================================================================================================
-double compute_signal_means_ex(int k, Parameters &fp, bool yw=false);
+double compute_signal_means_ex(double x, Parameters &fp, bool yw=false);
 
 // Calculates the combined signal to fp.Dn and the best fit omegas values for the two T signal
 void compute_signal_TwoTemperatures(vector<double> &Dn, double ftau, double DT_T, Parameters &fp, 

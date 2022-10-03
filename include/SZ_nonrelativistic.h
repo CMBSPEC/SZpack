@@ -36,7 +36,7 @@ class IntegralNonRelativistic{
     public:
     IntegralNonRelativistic();
     IntegralNonRelativistic(double x_i, double The_i, double betac_i, double muc_i);
-    IntegralNonRelativistic(int k, Parameters fp);
+    IntegralNonRelativistic(double x_i, Parameters fp);
     void Update_x(double x_i);
 
     private:
@@ -65,7 +65,7 @@ double compute_SZ_distortion_nonrelativistic(double x, double The, double betac,
 void compute_SZ_distortion_nonrelativistic(vector<double> &Dn, vector<double> &x,
                                            double The, double betac, double muc, string mode, bool DI);
 
-double compute_SZ_distortion_nonrelativistic(int k, Parameters fp);
+double compute_SZ_distortion_nonrelativistic(double x, Parameters fp);
 void compute_SZ_distortion_nonrelativistic(vector<double> &Dn, Parameters &fp, bool DI);
 
 #endif

@@ -36,6 +36,17 @@ class MeansParameters{ //Contains the Parameters needed for running means
     void assignSigmas(double sigma0, double sigma1, double sigma2);
 };
 
+class KernelParameters{ //Contains the Parameters needed for running means
+    public:
+    double smin, smax;
+    vector<double> srange;
+    int l;
+
+    KernelParameters();
+
+    void copyKernelParameters(KernelParameters copyKernelParameters);
+};
+
 class TemperatureIterators{
     public:
     double Tmin, Tmax;
@@ -103,6 +114,7 @@ class Parameters{
     string mode;
 
     CalculatedParameters calc;
+    KernelParameters kernel;
     MeansParameters means;
     RareParameters rare;
 
@@ -118,6 +130,7 @@ class Parameters{
     void Set_x(double x_min, double x_max, int gridpoints_i);
     void Set_x_from_nu(double nu_min, double nu_max, int gridpoints_i);
     vector<double> get_nucmb();
+    void Set_s(double s_min, double s_max, int gridpoints_i);
     void updateT(double T);
     void setCalcValues(); //needs to be called if muc, muo, betac or betao are changed!
 
@@ -127,6 +140,7 @@ class Parameters{
     void CheckValuesNumericalIntegration();
     void CheckValuesCNSNopt();
     void CheckValues_orders();
+    void CheckValues_Kernel();
     void CheckValues_means();
     void CheckValues_rare();
 };

@@ -9,9 +9,9 @@ namespace py = pybind11;
 void init_ex_asymptotic(py::module_ &m){
     py::class_<IntegralAsymptotic>(m, "class_asymptotic", py::module_local())
         .def(py::init<>())
-        .def("set_from_params", [](IntegralAsymptotic &a, int k, Parameters fp, bool CMBframe){
-                        a = IntegralAsymptotic(k, fp, CMBframe, true);}, "k"_a, "Params"_a, "CMBframe"_a, 
-                        "A function to initialise the class from a parameters class. k is the index of xcmb that will be calculated.")
+        .def("set_from_params", [](IntegralAsymptotic &a, double x, Parameters fp, bool CMBframe){
+                        a = IntegralAsymptotic(x, fp, CMBframe, true);}, "x"_a, "Params"_a, "CMBframe"_a, 
+                        "A function to initialise the class from a parameters class.")
         .def("set_from_variables", [](IntegralAsymptotic &a, double x_i, double The_i, double betac_i, double muc_i, 
                         int Te_order_i, int betac_order_i, bool CMBframe){
                         a = IntegralAsymptotic(x_i, The_i, betac_i, muc_i, Te_order_i, betac_order_i, CMBframe);},

@@ -44,7 +44,7 @@ class Integral3D{
     public:
     Integral3D();
     Integral3D(double x_i, double The_i, double betac_i, double muc_i, double eps_Int_i);
-    Integral3D(int k, Parameters fp);
+    Integral3D(double x_i, Parameters fp);
     void Update_x(double x_i);
 
     private:
@@ -89,7 +89,7 @@ void compute_SZ_distortion_Patterson_3D(vector<double> &Dn, vector<double> x,
                                         double The, double betac, double muc, double eps_Int,
                                         string mode, bool DI);      
 
-double compute_SZ_distortion_Patterson_3D(int k, Parameters fp);
+double compute_SZ_distortion_Patterson_3D(double x, Parameters fp);
 void compute_SZ_distortion_Patterson_3D(vector<double> &Dn, Parameters &fp, bool DI);
 
 

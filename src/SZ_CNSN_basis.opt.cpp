@@ -208,8 +208,8 @@ IntegralCNSNopt::IntegralCNSNopt(double x_i, double The_i, double betac_i, doubl
 IntegralCNSNopt::IntegralCNSNopt()
     : IntegralCNSNopt(1.0, 0.0, 0.0, 0.0, 0.0, 6, 3, 2, true) {}
 
-IntegralCNSNopt::IntegralCNSNopt(int k, Parameters fp, bool CMB)
-    : IntegralCNSNopt(CMB ? fp.calc.xfacCMB : fp.calc.xfac, fp.xcmb[k], fp.calc.The, fp.betac, CMB ? fp.muc : fp.calc.mucc, 
+IntegralCNSNopt::IntegralCNSNopt(double x_i, Parameters fp, bool CMB)
+    : IntegralCNSNopt(CMB ? fp.calc.xfacCMB : fp.calc.xfac, x_i, fp.calc.The, fp.betac, CMB ? fp.muc : fp.calc.mucc, 
                         fp.kmax, fp.accuracy_level, fp.beta_order, CMB) {}
 
 void IntegralCNSNopt::Update_x(double x_i){
@@ -418,20 +418,44 @@ void compute_SZ_distortion_CNSN_basis_opt(vector<double> &Dn, vector<double> x,
     }
 }
 
-double compute_SZ_distortion_CNSN_basis_opt(int k, Parameters fp, bool CMBframe){
-    IntegralCNSNopt szDistortion = IntegralCNSNopt(fp.k_inRange(k), fp, CMBframe);
+double compute_SZ_distortion_CNSN_basis_opt(double x, Parameters fp, bool CMBframe){
+    IntegralCNSNopt szDistortion = IntegralCNSNopt(x, fp, CMBframe);
     return szDistortion.compute_distortion(fp.rare.RunMode);
 }
 
 void compute_SZ_distortion_CNSN_basis_opt(vector<double> &Dn, Parameters fp, bool DI, bool CMBframe){
     Dn.resize(fp.gridpoints);
-    IntegralCNSNopt szDistortion = IntegralCNSNopt(0, fp, CMBframe);
+    IntegralCNSNopt szDistortion = IntegralCNSNopt(fp.xcmb[0], fp, CMBframe);
     Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
     for(int k = 1; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
         Dn[k] = fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
+}
+
+//==================================================================================================
+//TODO: These are only used in SZ_moment_method. May be able to write this code better to remove the need for these functions.
+//==================================================================================================
+
+vector<double> Get_temperature_regions(int kmax, int accuracy_level)
+{
+    IntegralCNSNopt szDistortion = IntegralCNSNopt(kmax,accuracy_level);
+    return szDistortion.accuracy.Te_regions;
+}
+
+vector<int> Get_region_indices (int kmax, int accuracy_level)
+{
+    IntegralCNSNopt szDistortion = IntegralCNSNopt(kmax,accuracy_level);
+    return szDistortion.accuracy.pivot_indices;
+}
+
+vector<double> Get_temperature_pivots (int kmax, int accuracy_level)
+{
+    IntegralCNSNopt szDistortion = IntegralCNSNopt(kmax,accuracy_level);
+    vector<double> TePivot = szDistortion.accuracy.Te_pivots;
+    for (double Te: TePivot) {Te = Te/const_me;}
+    return TePivot;
 }
 
 //==================================================================================================

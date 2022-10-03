@@ -9,9 +9,9 @@ namespace py = pybind11;
 void init_ex_CNSN(py::module_ &m){
     py::class_<IntegralCNSN>(m, "class_CNSN", py::module_local())
         .def(py::init<>())
-        .def("set_from_params", [](IntegralCNSN &a, int k, Parameters fp, bool CMBframe){
-                        a = IntegralCNSN(k, fp, CMBframe, true);}, "k"_a, "Params"_a, "CMBframe"_a, 
-                        "A function to initialise the class from a parameters class. k is the index of xcmb that will be calculated.")
+        .def("set_from_params", [](IntegralCNSN &a, double x, Parameters fp, bool CMBframe){
+                        a = IntegralCNSN(x, fp, CMBframe, true);}, "x"_a, "Params"_a, "CMBframe"_a, 
+                        "A function to initialise the class from a parameters class.")
         .def("set_from_variables", [](IntegralCNSN &a, double x_i, double The_i, double betac_i, double muc_i, 
                         int Te_order_i, int betac_order_i, bool CMBframe){
                         a = IntegralCNSN(x_i, The_i, betac_i, muc_i, Te_order_i, betac_order_i, CMBframe);},

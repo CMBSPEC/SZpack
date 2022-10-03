@@ -43,6 +43,20 @@ void MeansParameters::copyMeansParameters(MeansParameters original){
 }
 
 //=================================================================================================
+KernelParameters::KernelParameters(){
+    smin = -0.6; 
+    smax = 0.6; 
+    l = 2;  
+}
+
+void KernelParameters::copyKernelParameters(KernelParameters original){
+    smin = original.smin;
+    smax = original.smax;
+    srange = original.srange;
+    l = original.l;
+}
+
+//=================================================================================================
 RareParameters::RareParameters(){
     setTCMB(2.726);
     RunMode = "";
@@ -91,6 +105,7 @@ Parameters::Parameters(){
 
     mode = "3D";        //the default mode used. The mode can still be chosen from the command line.
 
+    kernel = KernelParameters();
     means = MeansParameters();
     rare = RareParameters();
 
@@ -127,6 +142,7 @@ void Parameters::copyParameters(Parameters copyParameters){
     mode = copyParameters.mode;
 
     calc.copyCalculatedParameters(copyParameters.calc);
+    kernel.copyKernelParameters(copyParameters.kernel);
     means.copyMeansParameters(copyParameters.means);
     rare.copyRareParameters(copyParameters.rare);
     T.copyTemperatureIterators(copyParameters.T);
@@ -138,7 +154,9 @@ void Parameters::copyParameters(Parameters copyParameters){
 void Parameters::PopulateRunningArrays(){
     //set the arrays for the functions to run over.
     xcmb.resize(gridpoints);
+    kernel.srange.resize(gridpoints);
     init_xarr(xmin, xmax, &xcmb[0], gridpoints, 1, 0); // change 1 --> 0 to have linear grid in x
+    init_xarr(kernel.smin, kernel.smax, &kernel.srange[0], gridpoints, 0, 0);
 }
 
 void Parameters::SetParametersFromFile(string filename){
@@ -218,6 +236,16 @@ void Parameters::SetParametersFromFile(string filename){
 
     if (parser_read(pfc, "Te_max", dval)){
         Te_max = dval;
+    }
+
+    if (parser_read(pfc, "smin", dval)){
+        kernel.smin = dval;
+    }
+    if (parser_read(pfc, "smax", dval)){
+        kernel.smax = dval;
+    }
+    if (parser_read(pfc, "l", ival)){
+        kernel.l = ival;
     }
 
     if (parser_read_3vector(pfc, "omegas", vec3)){
@@ -306,6 +334,7 @@ bool Parameters::CheckValues(){
     CheckValuesNumericalIntegration();
     CheckValues_orders();
     CheckValuesCNSNopt();
+    CheckValues_Kernel();
     CheckValues_means();
     CheckValues_rare();
     D.checkValues();
@@ -342,6 +371,14 @@ void Parameters::CheckValues_orders(){
         print_error("The beta_order set is out of bounds. It must be at least 0 and most 2. It is set = 2.");
         beta_order = 2;
     }
+}
+
+void Parameters::CheckValues_Kernel(){
+    if(kernel.l<0){
+        print_error("l cannot be less than 0. l set = 0.");
+        kernel.l = 0;
+    }
+    //TODO: smin smax checks.
 }
 
 void Parameters::CheckValues_means(){
@@ -408,6 +445,13 @@ vector<double> Parameters::get_nucmb(){
     return nucmb;
 }
 
+void Parameters::Set_s(double s_min, double s_max, int gridpoints_i){
+    kernel.smin = s_min;
+    kernel.smax = s_max;
+    gridpoints = gridpoints_i;
+    PopulateRunningArrays();
+}
+
 void Parameters::updateT(double T){
     if (T<=0.0){
         print_error("Te must be greater than 0. For non relativistic method, please use specific function. Te = " 
@@ -427,7 +471,7 @@ void Parameters::setCalcValues(){
     calc.mucc = (muc - betac)/(1.0-betac*muc);
         
     // transformation of xo to xc
-    calc.xfac = calc.gammac*(1.0-betac*calc.mucc)*calc.gammao*(1.0+betao*muo); // xfac*xo = xc;
+    calc.xfac = calc.gammac*(1.0-betac*muc)*calc.gammao*(1.0+betao*muo); // xfac*xo = xc;
     calc.xfacCMB = calc.gammao*(1.0+betao*muo);
     
     // change to Nozawa 2006 convention for scattering optical depth

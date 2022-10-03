@@ -71,19 +71,24 @@ void setConvention(bool UseNozawaConvention){
 // Note: If The or Te = 0.0, none of these will give the appropriate return. (Since y is calculated
 // as Dtau*The). To calculate the nonrelativistic signal, use the specific function.
 //==================================================================================================
-double compute_signal_nonrelativistic(int k, Parameters &fp){
-    return fp.Dtau*compute_SZ_distortion_nonrelativistic(k, fp);
+double compute_signal_nonrelativistic(double x, Parameters &fp){
+    return fp.Dtau*compute_SZ_distortion_nonrelativistic(x, fp);
 }
 
-double compute_signal_5D(int k, Parameters &fp){
-    return fp.Dtau*compute_SZ_distortion_Patterson_5D(k, fp);
+double compute_signal_5D(double x, Parameters &fp){
+    return fp.Dtau*compute_SZ_distortion_Patterson_5D(x, fp);
 }
 
-double compute_signal_3D(int k, Parameters &fp){
-    return fp.Dtau*compute_SZ_distortion_Patterson_3D(k, fp);
+double compute_signal_3D(double x, Parameters &fp){
+    return fp.Dtau*compute_SZ_distortion_Patterson_3D(x, fp);
 }
 
-double compute_signal_asymptotic(int k, Parameters &fp, bool CMBframe){
+//double compute_signal_Kernel(double x, Parameters &fp){
+    //TODO: Add in Sanity Checks!
+//    return compute_SZ_distortion_Kernel(x, fp);
+//}
+
+double compute_signal_asymptotic(double x, Parameters &fp, bool CMBframe){
     if(fp.Te>20.0) { 
         print_error("compute_SZ_signal_asymptotic :: Temperature really (!) high (Te = " + to_string(fp.Te) + " keV)");
     }
@@ -91,15 +96,15 @@ double compute_signal_asymptotic(int k, Parameters &fp, bool CMBframe){
     if(fp.T_order>10){ fp.T_order=10; }
     if(fp.beta_order>2){ fp.beta_order=2; }
 
-    return fp.Dtau*compute_SZ_distortion_asymptotic(k, fp, CMBframe);
+    return fp.Dtau*compute_SZ_distortion_asymptotic(x, fp, CMBframe);
 }
 
-double compute_signal_asymptotic(int k, Parameters &functionParameters){
-    return compute_signal_asymptotic(k, functionParameters, true);
+double compute_signal_asymptotic(double x, Parameters &fp){
+    return compute_signal_asymptotic(x,  fp, true);
 }
 
-double compute_signal_CNSN(int k, Parameters &fp, bool CMBframe){
-    if(fp.xcmb[k]<0.01 || fp.xcmb[k]>50.0) { 
+double compute_signal_CNSN(double x, Parameters &fp, bool CMBframe){
+    if(x<0.01 || x>50.0) { 
         exit_error("compute_SZ_signal_CNSN_basis :: You are outside of grid");
     }
 
@@ -110,37 +115,37 @@ double compute_signal_CNSN(int k, Parameters &fp, bool CMBframe){
     if(fp.T_order>20){ fp.T_order=20; }
     if(fp.beta_order>2){ fp.beta_order=2; }
 
-    return fp.Dtau*compute_SZ_distortion_CNSN_basis(k, fp, CMBframe);
+    return fp.Dtau*compute_SZ_distortion_CNSN_basis(x, fp, CMBframe);
 }
 
-double compute_signal_CNSN(int k, Parameters &functionParameters){
-    return compute_signal_CNSN(k, functionParameters, true);
+double compute_signal_CNSN(double x, Parameters &fp){
+    return compute_signal_CNSN(x, fp, true);
 }
 
-double compute_signal_CNSN_opt(int k, Parameters &fp){
+double compute_signal_CNSN_opt(double x, Parameters &fp){
     //==============================================================================================
     // simple sanity checks
     //==============================================================================================
-    if(fp.xcmb[k]<0.01 || fp.xcmb[k]>50.0){
+    if(x<0.01 || x>50.0){
         exit_error("compute_SZ_signal_CNSN_basis_opt :: You are outside of grid");
     }
 
-    return fp.Dtau*compute_SZ_distortion_CNSN_basis_opt(k, fp, true);
+    return fp.Dtau*compute_SZ_distortion_CNSN_basis_opt(x, fp, true);
 }
 
-double compute_signal_combo(int k, Parameters &fp, bool CMBframe){
+double compute_signal_combo(double x, Parameters &fp, bool CMBframe){
     if(fp.Te<2.0){
         fp.T_order = 10;
         fp.beta_order = 2;
-        return compute_signal_asymptotic(k, fp, CMBframe); 
+        return compute_signal_asymptotic(x, fp, CMBframe); 
     }
     fp.T_order = 20;
     fp.beta_order = 2;
-    return compute_signal_CNSN(k, fp, CMBframe); 
+    return compute_signal_CNSN(x, fp, CMBframe); 
 }
 
-double compute_signal_combo(int k, Parameters &functionParameters){
-    return compute_signal_combo(k, functionParameters, true);
+double compute_signal_combo(double x, Parameters &fp){
+    return compute_signal_combo(x, fp, true);
 }
 
 //==================================================================================================
@@ -189,20 +194,13 @@ void Dcompute_signal_combo_CMB(double x, Parameters &fp, bool yw)
 
 double Dcompute_signal_combo_for_x(double x0, Parameters fp, int dx){
     double eps = 0.001;
-    double x_temp = fp.xcmb[0];
-    fp.xcmb[0] = x0;
-    double Ix=pow(x0, 3)*compute_signal_combo(0, fp, true);
+    double Ix=pow(x0, 3)*compute_signal_combo(x0, fp, true);
     double xp=x0*(1.0+eps), xm=x0*(1.0-eps);
     double xp2=x0*(1.0+2*eps), xm2=x0*(1.0-2*eps);
-    fp.xcmb[0] = xp;
-    double Ixp=pow(xp, 3)*compute_signal_combo(0, fp, true);
-    fp.xcmb[0] = xm;
-    double Ixm=pow(xm, 3)*compute_signal_combo(0, fp, true);
-    fp.xcmb[0] = xp2;
-    double Ixp2=pow(xp2, 3)*compute_signal_combo(0, fp, true);
-    fp.xcmb[0] = xm2;
-    double Ixm2=pow(xm2, 3)*compute_signal_combo(0, fp, true);
-    fp.xcmb[0] = x_temp;
+    double Ixp=pow(xp, 3)*compute_signal_combo(xp, fp, true);
+    double Ixm=pow(xm, 3)*compute_signal_combo(xm, fp, true);
+    double Ixp2=pow(xp2, 3)*compute_signal_combo(xp2, fp, true);
+    double Ixm2=pow(xm2, 3)*compute_signal_combo(xm2, fp, true);
 
     if (dx == 1) {
         return (-Ixp2+8.0*Ixp-8.0*Ixm+Ixm2)/12.0/eps;
@@ -225,10 +223,10 @@ double Dcompute_signal_combo_for_x(double x0, Parameters fp, int dx){
 
 //==================================================================================================
 
-double compute_signal_means(int k, Parameters &fp, bool yw){
+double compute_signal_means(double x, Parameters &fp, bool yw){
     // mean signal + temperature dispersion term
     fp.D.setValues(2,0,0);
-    Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+    Dcompute_signal_combo_CMB(x, fp, yw);
     
     double r = fp.D.dDn_dThe[0]+fp.D.dDn_dThe[2]*fp.means.Omega;
 
@@ -236,7 +234,7 @@ double compute_signal_means(int k, Parameters &fp, bool yw){
     if(fp.means.Sigma!=0.0)
     {
         fp.D.setValues(1,1,0);
-        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dcompute_signal_combo_CMB(x, fp, yw);
         r += fp.D.dDn_dThe[1]*fp.means.Sigma;
     }
     
@@ -244,7 +242,7 @@ double compute_signal_means(int k, Parameters &fp, bool yw){
     if(fp.means.kappa!=0.0)
     {
         fp.D.setValues(0,2,0);
-        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dcompute_signal_combo_CMB(x, fp, yw);
         r += fp.D.dDn_dThe[0]*fp.means.kappa;
     }
 
@@ -252,29 +250,20 @@ double compute_signal_means(int k, Parameters &fp, bool yw){
     if(fp.calc.betac2_perp!=0.0)
     {
         fp.D.setValues(0,0,1);
-        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dcompute_signal_combo_CMB(x, fp, yw);
         r += fp.D.dDn_dThe[0]*fp.calc.betac2_perp;
     }
     return r;
 }
 
-double compute_signal_means(double x0, Parameters &fp, bool yw){
-    //For calculating the null value of the signal.
-    double xcmb0 = fp.xcmb[0];
-    fp.xcmb[0] = x0;
-    double dum = compute_signal_means(0,fp,yw);
-    fp.xcmb[0] = xcmb0;
-    return dum;
-}
-
-double compute_signal_means_tw(int k, Parameters &fp){
+double compute_signal_means_tw(double x, Parameters &fp){
     //This uses the dimensionless tau-weighted terms
-    return compute_signal_means(k, fp, false);
+    return compute_signal_means(x, fp, false);
 }
 
-double compute_signal_means_yw(int k, Parameters &fp){
+double compute_signal_means_yw(double x, Parameters &fp){
     //This uses the dimensionless y-weighted terms as described in Lee, Chluba, Kay & Barnes 2020
-    return compute_signal_means(k, fp, true);
+    return compute_signal_means(x, fp, true);
 }
 
 //==================================================================================================
@@ -304,18 +293,18 @@ double compute_null_of_SZ_signal(Parameters fp) {
 // (added 29th Aug, 2012, JC)
 //
 //==================================================================================================
-double compute_signal_means_ex(int k, Parameters &fp, bool yw)
+double compute_signal_means_ex(double x, Parameters &fp, bool yw)
 {
     // mean signal + temperature dispersion term
     fp.D.setValues(4,0,0);
-    Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+    Dcompute_signal_combo_CMB(x, fp, yw);
     double r = fp.D.dDn_dThe[0]+fp.D.dDn_dThe[2]*fp.means.omegas[0]+fp.D.dDn_dThe[3]*fp.means.omegas[1]+fp.D.dDn_dThe[4]*fp.means.omegas[2];
     
     // velocity - temperature cross term
     if(fp.means.sigmas[0]!=0.0 || fp.means.sigmas[1]!=0.0 || fp.means.sigmas[2]!=0.0)
     {
         fp.D.setValues(3,1,0);
-        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dcompute_signal_combo_CMB(x, fp, yw);
         r += fp.D.dDn_dThe[1]*fp.means.sigmas[0]+fp.D.dDn_dThe[2]*fp.means.sigmas[1]+fp.D.dDn_dThe[3]*fp.means.sigmas[2];
     }
     
@@ -323,7 +312,7 @@ double compute_signal_means_ex(int k, Parameters &fp, bool yw)
     if(fp.means.kappa != 0.0)
     {
         fp.D.setValues(0,2,0);
-        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dcompute_signal_combo_CMB(x, fp, yw);
         r += fp.D.dDn_dThe[0]*fp.means.kappa;
     }
     
@@ -331,7 +320,7 @@ double compute_signal_means_ex(int k, Parameters &fp, bool yw)
     if(fp.calc.betac2_perp != 0.0)
     {
         fp.D.setValues(0,0,1);
-        Dcompute_signal_combo_CMB(fp.xcmb[k], fp, yw);
+        Dcompute_signal_combo_CMB(x, fp, yw);
         r += fp.D.dDn_dThe[0]*fp.calc.betac2_perp;
     }
     return r;    
@@ -339,18 +328,18 @@ double compute_signal_means_ex(int k, Parameters &fp, bool yw)
 
 //==================================================================================================
 
-double compute_signal_RelCorrs(int k, Parameters &fp){
-    double dum = compute_signal_combo(k, fp);
-    dum -= compute_signal_nonrelativistic(k, fp);
+double compute_signal_RelCorrs(double x, Parameters &fp){
+    double dum = compute_signal_combo(x, fp);
+    dum -= compute_signal_nonrelativistic(x, fp);
     return dum;
 }
 
-double compute_signal_TDispersion(int k, Parameters &fp){
-    double dum=compute_signal_means(k, fp, false);
+double compute_signal_TDispersion(double x, Parameters &fp){
+    double dum=compute_signal_means(x, fp, false);
 
     double Omega = fp.means.Omega, Sigma = fp.means.Sigma;
     fp.means.Omega = fp.means.Sigma = 0.0;
-    dum -= compute_signal_means(k, fp, false);
+    dum -= compute_signal_means(x, fp, false);
     fp.means.Omega = Omega;
     fp.means.Sigma = Sigma;
     return dum;
@@ -391,6 +380,10 @@ void compute_signal_3D(vector<double> &Dn, Parameters &fp, bool DI){
     compute_SZ_distortion_Patterson_3D(Dn, fp, DI);
 }
 
+//void compute_signal_Kernel(vector<double> &Dn, Parameters &fp, bool DI){
+    //TODO: This!
+//}
+
 void compute_signal_asymptotic(vector<double> &Dn, Parameters &fp, bool DI, bool CMBframe){
     compute_SZ_distortion_asymptotic(Dn, fp, DI, CMBframe); 
 }
@@ -424,7 +417,7 @@ void compute_signal_precise(vector<double> &Dn, Parameters &fp, bool DI){
 void compute_signal_means(vector<double> &Dn, Parameters &fp, bool DI, bool yw){
     Dn.resize(fp.gridpoints);
     for (int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = compute_signal_means(k, fp, yw);
+        Dn[k] = compute_signal_means(fp.xcmb[k], fp, yw);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
@@ -432,7 +425,7 @@ void compute_signal_means(vector<double> &Dn, Parameters &fp, bool DI, bool yw){
 void compute_signal_means_ex(vector<double> &Dn, Parameters &fp, bool DI, bool yw){
     Dn.resize(fp.gridpoints);
     for (int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = compute_signal_means_ex(k, fp, yw);
+        Dn[k] = compute_signal_means_ex(fp.xcmb[k], fp, yw);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
@@ -440,7 +433,7 @@ void compute_signal_means_ex(vector<double> &Dn, Parameters &fp, bool DI, bool y
 void compute_signal_RelCorrs(vector<double> &Dn, Parameters &fp, bool DI){
     Dn.resize(fp.gridpoints);
     for (int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = compute_signal_RelCorrs(k, fp);
+        Dn[k] = compute_signal_RelCorrs(fp.xcmb[k], fp);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
@@ -448,7 +441,7 @@ void compute_signal_RelCorrs(vector<double> &Dn, Parameters &fp, bool DI){
 void compute_signal_TDispersion(vector<double> &Dn, Parameters &fp, bool DI){
     Dn.resize(fp.gridpoints);
     for (int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = compute_signal_TDispersion(k, fp);
+        Dn[k] = compute_signal_TDispersion(fp.xcmb[k], fp);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
