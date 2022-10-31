@@ -20,6 +20,12 @@ void init_ex_kernel(py::module_ &m){
                     return py::array(K.size(), K.data());}, "electronDist"_a, "Params"_a, "l"_a=-1,
                     "A function to calculate electron distribution averaged kernel. If l is not set, l is used from Params.");
     
+    m.def("averaged_electron_kernel", [](const std::function<double(double)> &eDist, Parameters fp, int l){
+                    if (l>= 0) {fp.kernel.l = l;}
+                    vector<double> K; compute_averaged_electron_kernel(K, fp, eDist);
+                    return py::array(K.size(), K.data());}, "electronDist"_a, "Params"_a, "l"_a=-1,
+                    "A function to calculate electron distribution averaged electron anisotropy kernel. If l is not set, l is used from Params.");
+
     m.def("distortion_fixed_momentum", [](double eta, Parameters fp, bool DI){
                     vector<double> Dn; compute_SZ_distortion_fixed_eta(Dn, fp, DI, eta);
                     return py::array(Dn.size(), Dn.data());}, "eta"_a, "Params"_a, "DI"_a=true,
@@ -100,7 +106,7 @@ void init_ex_kernel(py::module_ &m){
                         MK.Update_s(s_array[var]); K[var] = MK.Calculate_integrated();
                     } return py::array(K.size(), K.data());},
                     "l"_a, "s_array"_a, "eta"_a, "relative_accuracy"_a=1.0e-4, "A function to calculate the multipole "
-                    "kernel through integration. (See Lee et al. 2021 for more details)");
+                    "kernel through integration. (See Lee et al. 2023 for more details)");
 
     m.def("kernel_stable", [](int l, vector<double> s_array, double eta, double Int_eps) {
                     int np = s_array.size(); vector<double> K; K.resize(np); 
@@ -116,6 +122,17 @@ void init_ex_kernel(py::module_ &m){
     m.def("s_limits", [](double eta){ MultipoleKernel MK = MultipoleKernel(0, 0.0, eta); return MK.s_limits();},
                     "eta"_a, "A function to calculate the minimum and maximum s values that can be scattered to, given an "
                     "input electron energy.");
+    
+    m.def("electron_anisotropy", [](int l, vector<double> s_array, double eta) {
+                    int np = s_array.size(); vector<double> K; K.resize(np); 
+                    MultipoleKernel MK = MultipoleKernel(l, s_array[0], eta);
+                    MK.photon_anisotropy = false;
+                    K[0] = MK.Calculate_stable();
+                    for (int var = 1; var < np; var++){
+                        MK.Update_s(s_array[var]); K[var] = MK.Calculate_stable();
+                    } return py::array(K.size(), K.data());},
+                    "l"_a, "s_array"_a, "eta"_a, "A function to calculate the multipole kernel for anisotropic electron "
+                    " distributions from the analytic formula. (See Lee et al. 2023 for more details)");
 
 //Beam Kernel Implementation
     m.def("beam_kernel_formula", [](int l, vector<double> s_array, double eta, double mup){

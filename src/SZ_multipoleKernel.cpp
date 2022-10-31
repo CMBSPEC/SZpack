@@ -33,6 +33,7 @@ MultipoleKernel::MultipoleKernel(int l_i, double s_i, double eta_i, double Int_e
     Update_s(s_i);
     eta = eta_i;
     Int_eps = Int_eps_i;
+    photon_anisotropy = true;
     gamma0 = sqrt(1+eta*eta);
     s_low = log((gamma0-eta)/(gamma0+eta));
     s_high = log((gamma0+eta)/(gamma0-eta));
@@ -82,11 +83,18 @@ void MultipoleKernel::Calculate_integral_variables(){
     //d2sigma/dmu/dmup as defined equation 2 CNSN
     double dsig = 3.0/8.0/PI*t/kappap/gamma2*(1.0-zeta*alpha_sc*(1.0-0.5*zeta*alpha_sc));
     double dphidt = (gamma0-eta*mup)/sqrt(eta*eta*(-1+mup*mup)*(-1+mus*mus)-pow(gamma0-t*gamma0+eta*mup*(t-mus),2));
-    double Plmus = 0;
-    for (int k=0; k<l+1; k++){
-        Plmus += pow(-1,k)*Binomial(l,k)*Binomial(l+k,k)*pow((1-mus)/2,k);
+    double Plmu = 0;
+    if (photon_anisotropy) {
+        for (int k=0; k<l+1; k++){
+            Plmu += pow(-1,k)*Binomial(l,k)*Binomial(l+k,k)*pow((1-mus)/2,k);
+        }
     }
-    r = Plmus*dphidt*dsig;
+    else {
+        for (int k=0; k<l+1; k++){
+            Plmu += pow(-1,k)*Binomial(l,k)*Binomial(l+k,k)*pow((1-mup)/2,k);
+        }
+    }
+    r = Plmu*dphidt*dsig;
 }
 
 double MultipoleKernel::sigl_Boltzmann_Compton(double int_mup){
@@ -162,6 +170,53 @@ void MultipoleKernel::Calculate_formula_variables(){
     }
 }
 
+double MultipoleKernel::Calculate_electron_multipoles(){
+    if (s<s_low|| s>s_high) { return 0.0; }
+
+    Lpart = 0.5*(fabs(s)-2.0*asinh(eta));
+    double beta0 = eta/gamma0;
+    vector<double> K(l+5,0.0);
+    for (int k = 0; k< l+5; k++){
+        int m = k-3;
+        double part1 = (pow(t,m)+1)*(pow(1+beta0,m)-pow(1-beta0,m));
+        double part2 = (pow(t,m)-1)*(pow(1+beta0,m)+pow(1-beta0,m));
+        double signt = t<1 ? -1.0 : 1.0;
+        K[k] = (part1-signt*part2)/(2*pow(1-beta0,m)*pow(t,m));
+    }
+
+    vector<double> X0(l+1,0.0), X1(l+1,0.0), X2(l+1,0.0), X3(l+1,0.0), X4(l+1,0.0);
+    for (int m = 0; m < l+1; m++){
+        for (int k = 0; k < m+1; k++){
+            double factor = Binomial(m,k)*pow(-1,k);
+            X0[m] += factor*K[k+4]/(k+1.0);
+            X1[m] += (k==0) ? -2.0*factor*Lpart : factor*K[k+3]/k;
+            X2[m] += (k==1) ? -2.0*factor*Lpart : factor*K[k+2]/(k-1.0);
+            X3[m] += (k==2) ? -2.0*factor*Lpart : factor*K[k+1]/(k-2.0);
+            X4[m] += (k==3) ? -2.0*factor*Lpart : factor*K[k]/(k-3.0);
+        }
+        double pref = pow((gamma0-eta)/eta,m+1)/pow(2.0,m);
+        X0[m] *= pref;
+        X1[m] *= pref/(gamma0-eta);
+        X2[m] *= pref/pow(gamma0-eta,2);
+        X3[m] *= pref/pow(gamma0-eta,3);
+        X4[m] *= pref/pow(gamma0-eta,4);
+    }
+
+    vector<double> Pn(l+1,0.0);
+    for (int m = 0; m<l+1; m++){
+        Pn[m] = 3*X4[m]/gamma0-6*(1+t)*X3[m]+(3*(1+4*t+t*t)+2*eta*eta*(1+6*t+t*t))*X2[m]/gamma0;
+        Pn[m] += -2*(3+2*eta*eta)*t*(1+t)*X1[m]+(3+4*eta*eta+4*pow(eta,4))*t*t*X0[m]/gamma0;
+    }
+
+    double prefactor = 3/(32*pow(eta,5));
+    double lsum = 0;
+    for (int m = 0; m<l+1; m++){
+        double pref = Binomial(l,m)*Binomial(l+m,m);
+        lsum += pref*Pn[m];
+    }
+    return prefactor*lsum;
+}
+
 //TODO: The tlimits should probably be implemented here
 double MultipoleKernel::Calculate_integrated(){
     if (s<s_low|| s>s_high) { return 0.0; }
@@ -169,15 +224,18 @@ double MultipoleKernel::Calculate_integrated(){
 }
 
 double MultipoleKernel::Calculate_formula(){
-    if (s<s_low|| s>s_high) { return 0.0; }
-    Calculate_formula_variables();
-    double prefactor = 3/(32*pow(eta,6));
-    double lsum = 0;
-    for (int n = 0; n<l+1; n++){
-        double pref = Binomial(l,n)*Binomial(l+n,n);
-        lsum += pref*(4*pow(eta,6)*K1[n]+(1+t)*K2[n]/t/pow(eta,2*n));
+    if (photon_anisotropy) {
+        if (s<s_low|| s>s_high) { return 0.0; }
+        Calculate_formula_variables();
+        double prefactor = 3/(32*pow(eta,6));
+        double lsum = 0;
+        for (int n = 0; n<l+1; n++){
+            double pref = Binomial(l,n)*Binomial(l+n,n);
+            lsum += pref*(4*pow(eta,6)*K1[n]+(1+t)*K2[n]/t/pow(eta,2*n));
+        }
+        return prefactor*lsum*t;
     }
-    return prefactor*lsum*t;
+    return Calculate_electron_multipoles();
 }
 
 double MultipoleKernel::Calculate_stable(){
@@ -339,6 +397,7 @@ IntegralKernel::IntegralKernel(double x_i, double betac_i, double muc_i, double 
     BK = BeamKernel(l, s, eta, 0.0);
     xfac = 1.0;
     beam_kernel=fixed_eta=false;
+    photon_anisotropy = true;
 }
 
 IntegralKernel::IntegralKernel(double x_i, Parameters fp)
@@ -354,6 +413,7 @@ void IntegralKernel::Calculate_shared_variables(){
     xp = x*exp(s);
     MK = MultipoleKernel(l, s, eta, Int_eps);
     BK = BeamKernel(l, s, eta, mup);
+    MK.photon_anisotropy = photon_anisotropy;
 }
 
 double IntegralKernel::Calculate_kernel(int l_i){
@@ -455,21 +515,21 @@ double IntegralKernel::eta_Int(double int_s){
     s = int_s;
     if (fixed_eta){ return sig_Boltzmann_Compton(eta); }
 
-    double a=sinh(fabs(s)/2.0), b = 5.0;//lim=30.0, b=lim*(1.0+0.5*lim*0.05);
+    double a=sinh(fabs(s)/2.0), b = 30.0;//lim=30.0, b=lim*(1.0+0.5*lim*0.05);
     double epsrel=Int_eps, epsabs=1.0e-300;
     
     return Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->sig_Boltzmann_Compton(int_var);});
 }
 
+/*
 //TODO: Figure this out for the better formation of our integration functions
-/*double IntegralKernel::eta_Int(double s, double The, int l)
+double IntegralKernel::eta_Int(double int_s)
 {
-    double lowerbound = sinh(fabs(s)/2.0);
-    double a=lowerbound, lim=30.0, b=lim*(1.0+0.5*lim*The);
-    double epsrel=Int_eps_Kernel, epsabs=1.0e-300;
-    
-    double d[3]={s, The, (double)l};
-    void *userdata=(void *)d;
+    s = int_s;
+    if (fixed_eta){ return sig_Boltzmann_Compton(eta); }
+
+    double a=sinh(fabs(s)/2.0), b = 5.0;//lim=30.0, b=lim*(1.0+0.5*lim*0.05);
+    double epsrel=Int_eps, epsabs=1.0e-300;
 
     //return Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, Boltzmann_l, userdata);
 
@@ -477,8 +537,8 @@ double IntegralKernel::eta_Int(double int_s){
 
     workspace = gsl_integration_workspace_alloc(1000);
     gsl_function F;
-    F.function = &Boltzmann_l;
-    F.params = userdata;
+    F.function = &foo_wrapper;
+    F.params = this;
 
     double result, error;
 
@@ -493,7 +553,7 @@ double IntegralKernel::eta_Int(double int_s){
 
 
 double IntegralKernel::s_Int(){
-    double a=-5.0, b=5.0;
+    double a=-1.0, b=1.0;
     double epsrel=Int_eps, epsabs=1.0e-300;
 
     double integral = Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->eta_Int(int_var);});
@@ -507,6 +567,13 @@ double IntegralKernel::compute_kernel(int l_i, double s_i, electronDistribution 
     return eta_Int(s_i);
 }
 
+double IntegralKernel::compute_electron_kernel(int l_i, double s_i, electronDistribution eDistribution){
+    photon_anisotropy = false;
+    double return_val = compute_kernel(l_i,s_i,eDistribution);
+    photon_anisotropy = true;
+    return return_val;
+}
+
 double IntegralKernel::compute_distortion(string mode, electronDistribution eDistribution){
     run_mode="all";
     if(mode=="monopole" || mode=="dipole" || mode=="quadrupole" || mode=="monopole_corr" ||mode=="kin"){
@@ -514,14 +581,6 @@ double IntegralKernel::compute_distortion(string mode, electronDistribution eDis
     }
     etaDistribution = eDistribution;
     return s_Int();
-}
-
-double IntegralKernel::temp(double int_s){
-    double Sx = xk_dk_nPl(0,x);
-    double Sp= xk_dk_nPl(0,xp);
-    MK.Update_l(0);
-    double F = MK.Calculate_stable();
-    return F*(Sp-Sx);
 }
 
 double IntegralKernel::compute_distortion_fixed_eta(string mode, double eta_i){
@@ -643,6 +702,14 @@ void compute_averaged_kernel(vector<double> &Dn, Parameters &fp, std::function<d
     IntegralKernel szDistortion = IntegralKernel(0.1, fp);
     for(int k = 0; k < fp.gridpoints; k++){
         Dn[k] = szDistortion.compute_kernel(fp.kernel.l, fp.kernel.srange[k], eDistribution);
+    }
+}
+
+void compute_averaged_electron_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution){
+    Dn.resize(fp.gridpoints);
+    IntegralKernel szDistortion = IntegralKernel(0.1, fp);
+    for(int k = 0; k < fp.gridpoints; k++){
+        Dn[k] = szDistortion.compute_electron_kernel(fp.kernel.l, fp.kernel.srange[k], eDistribution);
     }
 }
 

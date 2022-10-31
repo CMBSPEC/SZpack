@@ -49,6 +49,7 @@ class MultipoleKernel{
     MultipoleKernel(int l_i, double s_i, double eta_i, double Int_eps_i);
     void Update_s(double s_i);
     void Update_l(int l_i);
+    bool photon_anisotropy;
 
     private:
     void Calculate_integral_variables();
@@ -62,6 +63,7 @@ class MultipoleKernel{
     double Calculate_integrated();
     double Calculate_formula();
     double Calculate_stable();
+    double Calculate_electron_multipoles();
 };
 
 class BeamKernel{
@@ -94,7 +96,7 @@ class IntegralKernel{
     int l;
     double s, eta, xfac, xp, mup;
 
-    bool beam_kernel, fixed_eta;
+    bool beam_kernel, fixed_eta, photon_anisotropy;
 
     electronDistribution etaDistribution;
     MultipoleKernel MK;
@@ -125,8 +127,8 @@ class IntegralKernel{
     public:
     double compute_distortion(string mode, electronDistribution eDistribution);
     double compute_kernel(int l_i, double s_i, electronDistribution eDistribution);
-    double temp(double int_s);
     double compute_distortion_fixed_eta(string mode, double eta_i);
+    double compute_electron_kernel(int l_i, double s_i, electronDistribution eDistribution);
 
     double compute_beam_distortion(double mup_i, string mode, electronDistribution eDistribution);
     double compute_beam_kernel(double mup_i, int l_i, double s_i, electronDistribution eDistribution);
@@ -164,6 +166,8 @@ void compute_averaged_kernel(vector<double> &Dn, int l, vector<double> s, double
                              std::function<double(double)> eDistribution);
 double compute_averaged_kernel(double s, Parameters fp, std::function<double(double)> eDistribution);
 void compute_averaged_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution);
+
+void compute_averaged_electron_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution);
 
 double compute_SZ_distortion_fixed_eta(double x, double eta, double betac, double muc, double eps_Int, string mode = "all");
 void compute_SZ_distortion_fixed_eta(vector<double> &Dn, vector<double> x, double eta, double betac, double muc,

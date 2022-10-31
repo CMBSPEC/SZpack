@@ -29,6 +29,8 @@ double Boltzmann_Dist(double eta, double Te) {
     return eta*eta*exp_th*norm;
 }
 
+//TODO: add non-relativistic Maxwell boltzmann also
+
 //==================================================================================================
 // 
 // Different models for temperature distributions
@@ -77,12 +79,11 @@ double kappa_Dist(double eta, double Te, double kappa) {
     //kappa an integer >=2
     double The = Te/const_me;
 
-    double b = eta/sqrt(eta*eta+1.0);
     double dbdeta = pow(eta*eta+1.0,-1.5);
     double factor = 2.0/sqrt(TWOPI*The)/The;
     double kappa_part = Gamma_JC(kappa+1)/Gamma_JC(kappa-0.5)/pow(kappa-1.5,1.5);
-    double E_part = pow(1+b*b/2.0/The/(kappa-1.5),-(kappa+1));
-    return factor*kappa_part*E_part*b*b*dbdeta;
+    double E_part = pow(1+eta*eta/2.0/The/(kappa-1.5),-(kappa+1));
+    return factor*kappa_part*E_part*eta*eta;
 }
 
 double MultiMaxwellian_Dist(double eta, double Te, vector<double> c, vector<double> a) {
