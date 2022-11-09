@@ -9,8 +9,7 @@
 #ifndef NPL_DERIVATIVES_H
 #define NPL_DERIVATIVES_H
 
-#include "physical_consts.h"
-#include "routines.h"
+#include <vector>
 
 using namespace std;
 

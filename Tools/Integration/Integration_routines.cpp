@@ -3,6 +3,10 @@
 //==================================================================================================
 #include "Integration_routines.h"
 
+#include <gsl/gsl_integration.h>
+#include <gsl/gsl_math.h>
+#include <algorithm>
+
 using namespace std;
 
 //==================================================================================================

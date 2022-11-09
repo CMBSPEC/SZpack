@@ -4,21 +4,8 @@
 #ifndef INTEGRATION_ROUTINES_H
 #define INTEGRATION_ROUTINES_H
 
-#include <iostream>
-#include <string>
-
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_integration.h>
-#include <iostream>
-#include <string>
+#include <stddef.h>
 #include <fstream>
-#include <cmath>
-#include <complex>
-#include <vector>
-
-#include "routines.h"
-#include "Chebyshev_Int.h"
-#include "Patterson.h"
 
 using namespace std;
 

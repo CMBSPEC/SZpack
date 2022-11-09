@@ -13,6 +13,11 @@
 
 #include "SZ_nonrelativistic.h"
 
+#include <cmath>
+
+#include "nPl_derivatives.h"
+#include "Parameters.h"
+
 IntegralNonRelativistic::IntegralNonRelativistic(){
     betac=muc=The=x=exp_mx=dex=0.0;
     run_mode="";

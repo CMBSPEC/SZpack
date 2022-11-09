@@ -12,10 +12,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "parser.h"
-#include "global_functions.h"
-#include "routines.h"
-#include "physical_consts.h"
 
 using namespace std;
 

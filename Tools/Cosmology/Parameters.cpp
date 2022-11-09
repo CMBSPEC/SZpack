@@ -8,6 +8,13 @@
 
 #include "Parameters.h"
 
+#include <cmath>
+
+#include "global_functions.h"
+#include "parser.h"
+#include "physical_consts.h"
+#include "routines.h"
+
 //=============================================================================================
 // Parameters Class
 //=============================================================================================

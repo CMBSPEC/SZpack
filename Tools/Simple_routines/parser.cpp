@@ -10,6 +10,7 @@
 //====================================================================================================================
 // 23.04.2018: overcame problem with variable names appearing after '#' with was not at beginning of line
 
+#include <stdlib.h>
 //====================================================================================================================
 // Standards
 //====================================================================================================================
@@ -18,8 +19,10 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <stdlib.h>
+#include <memory>
+
 #include "parser.h"
+#include "global_functions.h"
 
 using namespace std;
 

@@ -8,6 +8,10 @@
 
 #include "nPl_derivatives.h"
 
+#include <cmath>
+
+#include "routines.h"
+
 //==================================================================================================
 vector<vector<double> > E_coeffies;
 vector<vector<double> > Es_coeffies;

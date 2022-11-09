@@ -18,6 +18,14 @@
 
 #include "SZ_Integral.3D.h"
 
+#include <cmath>
+
+#include "Parameters.h"
+#include "Patterson.h"
+#include "Relativistic_MB.h"
+#include "nPl_derivatives.h"
+#include "Definitions.h"
+
 Integral3D::Integral3D(){
     Int_eps=betac=muc=The=x=mu=mup=xi=dx=xp=dsig0=dsig1=dsig2=nfac=exp_mx=dex=exp_mxp=dexp=0.0;
     run_mode="";

@@ -23,10 +23,10 @@
 #ifndef SZ_INTEGRAL_5D_H
 #define SZ_INTEGRAL_5D_H
 
-#include "Relativistic_MB.h"
-#include "nPl_derivatives.h"
-#include "Integration_routines.h"
-#include "Parameters.h" 
+#include <string>
+#include <vector>
+
+class Parameters;
 
 using namespace std;
 

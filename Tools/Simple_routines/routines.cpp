@@ -10,6 +10,12 @@
 // Jan 2012: added simple routines to load tables of data and create splines
 // Dec 2011: added routines for Gamma and incomplete Gamma functions
 
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_sf_coupling.h>
+#include <gsl/gsl_sf_gamma.h>
+#include <ext/alloc_traits.h>
+#include <gsl/gsl_interp.h>
+#include <stdio.h>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -17,14 +23,11 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include "routines.h"
 #include "Definitions.h"
-
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
-#include <gsl/gsl_sf_coupling.h>
-#include <gsl/gsl_sf_gamma.h>
+#include "global_functions.h"
 
 //======================================================================================
 // for xmgrace output

@@ -29,14 +29,12 @@
 #define SZ_CNSN_BASIS_H
 
 #include <vector>
+#include <string>
+#include <functional>
 
 using namespace std;
 
-#include "physical_consts.h"
-#include "routines.h"
-#include "Relativistic_MB.h"
-#include "nPl_derivatives.h"
-#include "Parameters.h" 
+class Parameters;
 
 class CNSNsplineMembers{
     public:

@@ -5,15 +5,8 @@
 #ifndef PATTERSON_H
 #define PATTERSON_H
 
-# include <cstdlib>
-# include <cmath>
-# include <iostream>
-# include <iomanip>
-# include <cstring>
-# include <vector>
+#include <functional>
 
-# include "routines.h"
-# include "global_functions.h"
 //==================================================================================================
 // patterson formulae & integration
 // Integral_-1^1 f(x) dx = f(0)+Sum _1^order w[i]*(f(0-x[i])+f(0+x[i]))

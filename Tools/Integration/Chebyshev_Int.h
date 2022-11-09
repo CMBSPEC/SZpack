@@ -9,18 +9,8 @@
 #ifndef CHEBYSHEV_INT_H
 #define CHEBYSHEV_INT_H
 
-#include <iostream>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <string>
 #include <fstream>
-#include <cmath>
-#include <complex>
-#include <vector>
-
-#include "Definitions.h"
-#include "routines.h"
 
 using namespace std;
 

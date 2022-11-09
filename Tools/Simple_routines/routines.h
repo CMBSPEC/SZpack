@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include "global_functions.h"
 
 using namespace std;
 

@@ -21,14 +21,11 @@
 #define SZ_CNSN_BASIS_OPT_H
 
 #include <vector>
+#include <string>
 
 using namespace std;
 
-#include "physical_consts.h"
-#include "routines.h"
-#include "Relativistic_MB.h"
-#include "nPl_derivatives.h"
-#include "SZ_asymptotic.h"
+class Parameters;
 
 
 class CNSNoptSplineMembers{

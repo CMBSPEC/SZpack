@@ -19,6 +19,11 @@
 
 #include "SZ_CNSN_basis.opt.h"
 
+#include <cmath>
+#include <memory>
+
+#include "Tools/Definitions/physical_consts.h"
+
 //==================================================================================================
 bool basis_loaded_CMB_opt=0;      
 
@@ -31,20 +36,27 @@ const vector<double> Tref_basis={9.4/const_me, 11.0/const_me, 14.0/const_me, 18.
                            40.0/const_me, 45.0/const_me, 50.0/const_me, 55.0/const_me, 
                            60.0/const_me, 80.0/const_me}; 
 
-#include "./src/database.opt/SZ_basis.Te_9.4keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_11keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_14keV.CMB.h"  
+#include "./src/database.opt/SZ_basis.Te_9.4keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_11keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_14keV.CMB.h"
 #include "./src/database.opt/SZ_basis.Te_18.5keV.CMB.h"
-#include "./src/database.opt/SZ_basis.Te_22keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_25keV.CMB.h" 
+#include "./src/database.opt/SZ_basis.Te_22keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_25keV.CMB.h"
 #include "./src/database.opt/SZ_basis.Te_30keV.CMB.h"
-#include "./src/database.opt/SZ_basis.Te_35keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_40keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_45keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_50keV.CMB.h" 
-#include "./src/database.opt/SZ_basis.Te_55keV.CMB.h"  
-#include "./src/database.opt/SZ_basis.Te_60keV.CMB.h"  
-#include "./src/database.opt/SZ_basis.Te_80keV.CMB.h"  
+#include "./src/database.opt/SZ_basis.Te_35keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_40keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_45keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_50keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_55keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_60keV.CMB.h"
+#include "./src/database.opt/SZ_basis.Te_80keV.CMB.h"
+#include "Parameters.h"
+#include "Relativistic_MB.h"
+#include "SZ_asymptotic.h"
+#include "global_functions.h"
+#include "nPl_derivatives.h"
+#include "physical_consts.h"
+#include "routines.h"
 
 //==================================================================================================
 CNSNoptSplineMembers::CNSNoptSplineMembers(){

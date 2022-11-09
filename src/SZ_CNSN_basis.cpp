@@ -27,6 +27,8 @@
 
 #include "SZ_CNSN_basis.h"
 
+#include <cmath>
+
 //==================================================================================================
 // these are the reference temperatures that were used to compute basis;
 //==================================================================================================
@@ -36,11 +38,16 @@ const double Tref_basis_high=0.1;
 
 #include "./src/database/SZ_basis.The_0.01.h"
 #include "./src/database/SZ_basis.The_0.03.h"
-#include "./src/database/SZ_basis.The_0.1.h" 
+#include "./src/database/SZ_basis.The_0.1.h"
 // CMB frame data
 #include "./src/database/SZ_basis.The_0.01.CMB.h"
 #include "./src/database/SZ_basis.The_0.03.CMB.h"
-#include "./src/database/SZ_basis.The_0.1.CMB.h" 
+#include "./src/database/SZ_basis.The_0.1.CMB.h"
+
+#include "Parameters.h"
+#include "Relativistic_MB.h"
+#include "nPl_derivatives.h"
+#include "routines.h"
 
 
 //==================================================================================================

@@ -10,6 +10,13 @@
 
 # include "Patterson.h"
 
+#include <cmath>
+#include <iostream>
+#include <vector>
+
+#include "global_functions.h"
+#include "routines.h"
+
 using namespace std;
 
 //==================================================================================================

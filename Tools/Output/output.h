@@ -7,15 +7,14 @@
 #ifndef output_H
 #define output_H
 
-#include <iostream>
 #include <fstream>
 #include <string>
-#include <sstream>
-#include <iomanip>
+#include <vector>
 
-#include "ModeFunctions.h"
-#include "physical_consts.h"
-#include "routines.h"
+#include "Parameters.h"
+#include "SZpack.h"
+
+struct method;
 
 using namespace std;
 

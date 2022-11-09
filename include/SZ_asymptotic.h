@@ -23,13 +23,11 @@
 #ifndef SZ_ASYMPTOTIC_H
 #define SZ_ASYMPTOTIC_H
 
-//==================================================================================================
-// required libs
-//==================================================================================================
-#include "physical_consts.h"
-#include "routines.h"
-#include "nPl_derivatives.h"
-#include "Parameters.h" 
+#include <functional>
+#include <string>
+#include <vector>
+
+class Parameters;
 
 using namespace std;
 

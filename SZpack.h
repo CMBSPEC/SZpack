@@ -55,17 +55,10 @@
 #ifndef SZPACK_H
 #define SZPACK_H
 
-#include <cmath>
 #include <vector>
-#include "Parameters.h"
+#include <string>
 
-#include "SZ_Integral.5D.h"
-#include "SZ_Integral.3D.h"
-#include "SZ_asymptotic.h"
-#include "SZ_CNSN_basis.h"
-#include "SZ_CNSN_basis.opt.h"
-//#include "SZ_Integral.Kernel.h"
-#include "SZ_nonrelativistic.h"
+class Parameters;
 
 using namespace std;
 

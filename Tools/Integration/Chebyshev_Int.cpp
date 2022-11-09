@@ -7,6 +7,14 @@
 
 #include "Chebyshev_Int.h"
 
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <vector>
+
+#include "Definitions.h"
+#include "routines.h"
+
 using namespace std;
 
 //==================================================================================================

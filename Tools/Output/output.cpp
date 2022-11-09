@@ -8,6 +8,14 @@
 
 #include "output.h"
 
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+
+#include "ModeFunctions.h"
+#include "global_functions.h"
+#include "physical_consts.h"
+
 //==================================================================================================
 //
 // Output for files

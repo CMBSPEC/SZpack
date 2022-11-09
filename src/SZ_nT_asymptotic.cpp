@@ -20,6 +20,12 @@
 
 #include "SZ_nT_asymptotic.h"
 
+#include <cmath>
+
+#include "SZ_asymptotic.h"
+#include "routines.h"
+#include "Parameters.h"
+
 //==================================================================================================
 //
 // analytic tables of moments for monopole, dipole and quadrupole scattering up to The^11

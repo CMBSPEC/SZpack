@@ -24,6 +24,11 @@
 
 #include "SZ_asymptotic.h"
 
+#include <cmath>
+
+#include "Parameters.h"
+#include "nPl_derivatives.h"
+
 //==================================================================================================
 //
 // analytic tables of moments for monopole, dipole and quadrupole scattering up to The^11

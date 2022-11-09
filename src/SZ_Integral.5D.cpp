@@ -20,6 +20,14 @@
 
 #include "SZ_Integral.5D.h"
 
+#include <cmath>
+
+#include "Parameters.h"
+#include "Patterson.h"
+#include "Relativistic_MB.h"
+#include "nPl_derivatives.h"
+#include "Definitions.h"
+
 Integral5D::Integral5D(){
     Int_eps=betac=muc=The=x=mu=mup=xi=phi=phip=dx=xp=dsig=mucp=0.0;
     exp_mx=dex=exp_mxp=dexp=nx=nxp=G=Gp=0.0;

@@ -14,11 +14,10 @@
 #ifndef SZ_NONREL_H
 #define SZ_NONREL_H
 
-//==================================================================================================
-// required libs
-//==================================================================================================
-#include "nPl_derivatives.h"
-#include "Parameters.h" 
+#include <string>
+#include <vector>
+
+class Parameters;
 
 using namespace std;
 

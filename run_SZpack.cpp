@@ -28,17 +28,9 @@
 // 23th July, 2012: added function to compute the precision different expansions
 // 22th July, 2012: added combo function option
 
-//==================================================================================================
-// Standards
-//==================================================================================================
-#include <stdio.h>
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <ctime>
-#include <iomanip>
 #include <cmath>
-#include <limits.h>
 #include <vector>
 
 //==================================================================================================
@@ -47,9 +39,9 @@
 #include "SZpack.h"
 #include "physical_consts.h"
 #include "routines.h"
-#include "parser.h"
 #include "global_functions.h"
 #include "Parameters.h"
+#include "ModeFunctions.h"
 
 //==================================================================================================
 //
@@ -59,7 +51,7 @@
 using namespace std;
 
 //==================================================================================================
-// these are several Modules (i.e. plugin) that are directly loaded when compiling. If there are 
+// these are several Modules (i.e. plugin) that are directly loaded when compiling. If there are
 // changes to these files one should usually type "make clean" before "make"
 //==================================================================================================
 #include "./StartUp/global_variables.cpp"

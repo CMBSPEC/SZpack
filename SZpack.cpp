@@ -52,15 +52,21 @@
 //
 //==================================================================================================
 
-#include <iostream>
+#include "SZpack.h"
+
 #include <string>
-#include <fstream>
 #include <cmath>
 #include <vector>
 
-#include "physical_consts.h"
 #include "routines.h"
-#include "SZpack.h"
+#include "Parameters.h"
+#include "SZ_CNSN_basis.h"
+#include "SZ_CNSN_basis.opt.h"
+#include "SZ_Integral.3D.h"
+#include "SZ_Integral.5D.h"
+#include "SZ_asymptotic.h"
+#include "SZ_nonrelativistic.h"
+#include "global_functions.h"
 
 using namespace std;
 
