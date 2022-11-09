@@ -9,7 +9,8 @@ clean:
 
 cleanall:
 	rm -f *.so
-	rm -f  ./SZpack/*.so
+	rm -f  ./MultipoleKernel/*.so
+	rm -f  ./NonThermalAsymptotic/*.so
 	rm -rf ./build
 	rm -rf ./dist
 	rm -rf ./SZpack.egg-info
