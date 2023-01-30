@@ -437,22 +437,16 @@ int calc_spline_coeffies_JC(int nxi, const double *za, const double *ya, string 
     if(variable=="") strvec.push_back("variable name was not given");
     else strvec.push_back(variable);
     
-    gsl_interp_accel *acc;
+    gsl_interp_accel *acc=gsl_interp_accel_alloc();
+    gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline, nxi);
+
+    gsl_spline_init (spline, za, ya, nxi);
+    
     accvec.push_back(acc);
-    //
-    gsl_spline *spline;
     splinevec.push_back(spline);
-    //
-    int element=splinevec.size()-1;
-    
-    accvec[element]=gsl_interp_accel_alloc();
-    splinevec[element]=gsl_spline_alloc(gsl_interp_cspline, nxi);
-    
-    gsl_spline_init (splinevec[element], za, ya, nxi);
-    
     allocvec.push_back(1);
     
-    return element;
+    return splinevec.size() - 1;
 }
 
 //===================================================================================
@@ -480,7 +474,7 @@ void update_spline_coeffies_JC(int memindex, int nxi,
 }
 
 //===================================================================================
-double calc_spline_JC(double x, int memindex, string mess)
+double calc_spline_JC(double x, int memindex, string /* mess */)
 {   
 /*  
     cout.precision(16);
@@ -1218,7 +1212,7 @@ void plot_xy_function(const vector<double> &xarr, const vector<double> &yarr, in
 	return;
 }
 #else
-void plot_xy_function(const vector<double> &xarr, const vector<double> &yarr, int flg=0)
+void plot_xy_function(const vector<double> &/* xarr */, const vector<double> &/* yarr */, int /* flg=0 */)
 {
     exit_error("plot_xy_function::Grace support was not activated.");
     return;

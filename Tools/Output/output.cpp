@@ -181,37 +181,6 @@ void output_precision_of_basis(double Te, method Method, Parameters fp){
 
 //==================================================================================================
 //
-// compute null of SZ signal
-//
-//==================================================================================================
-
-/*template <typename somestream>
-void IterateForNull(somestream &ofile, vector<double> &vec, double &iterated, Parameters &fp, double x){
-    for (int i = 0; i < vec.size(); i++){
-        iterated = vec[i];
-        ofile << compute_null_of_SZ_signal(fp) - x << " ";
-    }
-    ofile << endl;
-    iterated = 0.0;
-}*/
-
-//This mainly exists to make the template for Iterate compiles properly.
-void output_SZ_null(string fileAddition, Parameters fp, vector<double> &it_vec, double &iterated){
-    ofstream ofile;
-    fp.fileEnding = "_Null"+fp.fileEnding;
-    SetUpOutput("Computing null of SZ signal", fileAddition, fp, ofile);
-    ofile << "#\n# Output format: Te [K] | x0 = (h nu/k T0) :  x_null - x0" << endl;
-
-    double x0=compute_null_of_SZ_signal(fp);
-    
-    ofile << fp.Te << " " << x0 << ":" << endl;
-    IterateForNull(ofile, it_vec, iterated, fp, x0);
-
-    ofile.close();
-}
-
-//==================================================================================================
-//
 // output derivatives. Calculated using the combo method.
 //
 //==================================================================================================

@@ -85,7 +85,7 @@ const string SZpack_version="SZpack v2.0";
 // TODO: currently this is only used within the output_SZ_distortion() method.
 //
 //==================================================================================================
-static bool CNSN2012_convention;
+extern bool CNSN2012_convention;
 
 void setConvention(bool UseNozawaConvention);
 

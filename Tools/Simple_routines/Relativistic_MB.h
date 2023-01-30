@@ -8,8 +8,6 @@
 #ifndef RELATISTIC_MB_H
 #define RELATISTIC_MB_H
 
-using namespace std;
-
 //==================================================================================================
 //
 // relativistic Maxwell-Boltzmann distribution function

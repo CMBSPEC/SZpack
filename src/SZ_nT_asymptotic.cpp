@@ -205,7 +205,7 @@ const double q20[11][23]={
 // Non-Thermal code used for Radio SZ measurements. A function must be provided with calculates the
 // derivatives x^k d^k/dx^k (Background emission). 
 //==================================================================================================
-static double plainDistribution(int k, double x){
+static double plainDistribution(int /* k */, double /* x */){
     return 1.0;
 }
 

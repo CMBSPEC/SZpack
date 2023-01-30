@@ -64,6 +64,7 @@
 
 using namespace std;
 
+bool CNSN2012_convention = true;
 void setConvention(bool UseNozawaConvention){
     CNSN2012_convention = !UseNozawaConvention;
 }

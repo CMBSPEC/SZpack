@@ -28,6 +28,8 @@
 #ifndef SZ_CNSN_BASIS_H
 #define SZ_CNSN_BASIS_H
 
+#include <vector>
+
 using namespace std;
 
 #include "physical_consts.h"

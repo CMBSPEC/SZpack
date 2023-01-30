@@ -1,9 +1,10 @@
 #===============================================================================
 # choose c++ compiler & flags
 #===============================================================================
-CC= g++
-#CXXFLAGS = -Wall -pedantic -O2 -fPIC
-CXXFLAGS = -std=c++11 -Wall -pedantic -fPIC -fsanitize=undefined -O2
+CC = g++
+#CC = clang++
+CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -fPIC -O2
+#CXXFLAGS += -fsanitize=undefined
 
 #CC= icpc
 #CXXFLAGS = -Wall -O2 -fPIC
@@ -11,8 +12,8 @@ CXXFLAGS = -std=c++11 -Wall -pedantic -fPIC -fsanitize=undefined -O2
 #===============================================================================
 # linker flags
 #===============================================================================
-#LXXFLAGS =
-LXXFLAGS = -fsanitize=undefined
+LXXFLAGS =
+#LXXFLAGS += -fsanitize=undefined
 
 #===============================================================================
 # GSL lib

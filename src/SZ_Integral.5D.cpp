@@ -200,7 +200,7 @@ double Integral5D::xi_Int(){
 
 double Integral5D::compute_distortion(string mode){
     run_mode="full";
-    if(mode=="all"|mode=="monopole" || mode=="dipole" || mode=="quadrupole" || mode=="monopole_corr" ||mode=="kin"){
+    if(mode=="all" || mode=="monopole" || mode=="dipole" || mode=="quadrupole" || mode=="monopole_corr" ||mode=="kin"){
         run_mode = mode;
     }
     return norm_f_RM(The)*xi_Int();

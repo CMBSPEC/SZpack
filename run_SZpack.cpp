@@ -235,16 +235,27 @@ int main(int narg, char *args[])
             double x0=compute_null_of_SZ_signal(temp);
             
             ofile << temp.Te << " " << x0 << ":" << endl;
-                //
-            IterateForNull(ofile, betac_para_array, temp.calc.betac_para, temp, x0);
-                //
-            IterateForNull(ofile, omega_array, temp.means.Omega, temp, x0);
-                //
-            IterateForNull(ofile, sigma_array, temp.means.Sigma, temp, x0);
-                //
-            IterateForNull(ofile, kappa_array, temp.means.kappa, temp, x0);
-                //
-            IterateForNull(ofile, betac2_perp_array, temp.calc.betac2_perp, temp, x0);
+                
+            IterateForNull(ofile, betac_para_array,
+                [temp](const double &betac_para) mutable -> Parameters& {
+                    temp.calc.betac_para = betac_para; return temp;
+                }, x0);
+            IterateForNull(ofile, omega_array,
+                [temp](const double &Omega) mutable -> Parameters& {
+                    temp.means.Omega = Omega; return temp;
+                }, x0);
+            IterateForNull(ofile, sigma_array,
+                [temp](const double &Sigma) mutable -> Parameters& {
+                    temp.means.Sigma = Sigma; return temp;
+                }, x0);
+            IterateForNull(ofile, kappa_array,
+                [temp](const double &kappa) mutable -> Parameters& {
+                    temp.means.kappa = kappa; return temp;
+                }, x0);
+            IterateForNull(ofile, betac2_perp_array,
+                [temp](const double &betac2_perp) mutable -> Parameters& {
+                    temp.calc.betac2_perp = betac2_perp; return temp;
+                }, x0);
             
             double dI = Dcompute_signal_combo_for_x(x0, temp, 1);
             double d2I = Dcompute_signal_combo_for_x(x0, temp, 2);

@@ -65,15 +65,13 @@ void output_precision_of_basis(double Te, method Method, Parameters fp);
 //
 //==================================================================================================
 
-//TODO: This shouldn't have to be declared here, but misbehaves otherwise.
-template <typename somestream>
-void IterateForNull(somestream &ofile, vector<double> &vec, double &iterated, Parameters &fp, double x=0.0){
-    for (int i = 0; i < vec.size(); i++){
-        iterated = vec[i];
+template <typename somestream, class fpGetter>
+void IterateForNull(somestream &ofile, const vector<double> &vec, fpGetter &&getter, double x=0.0){
+    for (const auto& val : vec){
+        const Parameters &fp = getter(val);
         ofile << compute_null_of_SZ_signal(fp) - x << " ";
     }
     ofile << endl;
-    iterated = 0.0;
 }
 
 //This mainly exists to make the template for Iterate compiles properly.
