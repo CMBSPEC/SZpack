@@ -32,6 +32,7 @@
 #include "Relativistic_MB.h"
 #include "nPl_derivatives.h"
 #include "Integration_routines.h"
+#include "Patterson.h"
 #include "SZ_Integral_multiple.h"
 #include "SZ_Integral_multiple_data.h"
 #include "SZpack.h"

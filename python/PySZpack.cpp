@@ -2,6 +2,9 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include "SZpack.h"
+#include "Parameters.h"
+#include "physical_consts.h"
+#include "global_functions.h"
 
 using namespace pybind11::literals;
 namespace py = pybind11;

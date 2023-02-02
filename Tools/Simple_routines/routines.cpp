@@ -13,7 +13,7 @@
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_sf_coupling.h>
 #include <gsl/gsl_sf_gamma.h>
-#include <ext/alloc_traits.h>
+//#include <ext/alloc_traits.h>
 #include <gsl/gsl_interp.h>
 #include <stdio.h>
 #include <iostream>
@@ -893,7 +893,7 @@ string int_to_string(int i)
     {
         dig/=10;
         num = (int)(i/dig);
-        sprintf(buf, "%d", num); 
+        snprintf(buf, 16, "%d", num); 
         name += *buf;
         i-=num*dig;
     }

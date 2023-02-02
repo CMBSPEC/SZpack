@@ -3,7 +3,8 @@
 #===============================================================================
 CC = g++
 #CC = clang++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -fPIC -O2
+CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic -fPIC -O2
+#CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -fPIC -O2
 #CXXFLAGS += -fsanitize=undefined
 
 #CC= icpc

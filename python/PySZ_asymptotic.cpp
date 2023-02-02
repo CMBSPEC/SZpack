@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include "SZ_asymptotic.h"
+#include "Parameters.h"
 
 using namespace pybind11::literals;
 namespace py = pybind11;

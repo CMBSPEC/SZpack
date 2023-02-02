@@ -5,6 +5,9 @@
 //==================================================================================================
 
 #include "output_multiple_scattering.h"
+#include "SZ_asymptotic.h"
+#include "global_functions.h"
+
 using namespace std;
 
 extern Parameters parameters;

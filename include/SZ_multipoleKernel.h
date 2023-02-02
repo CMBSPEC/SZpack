@@ -19,9 +19,12 @@
 #ifndef SZ_MULTIPOLE_KERNEL_H
 #define SZ_MULTIPOLE_KERNEL_H
 
-#include "Integration_routines.h"
 #include "nPl_derivatives.h"
 #include "Parameters.h"
+#include "Integration_routines.h"
+#include "Patterson.h"
+#include "routines.h"
+#include "Definitions.h"
 //#include "SZ_electron_distributions.h"
 
 using namespace std;

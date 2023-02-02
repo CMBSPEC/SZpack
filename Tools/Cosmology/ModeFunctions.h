@@ -15,8 +15,8 @@ using namespace std;
 
 typedef double (*modefunction)(double, Parameters &);
 
-static double plainFunction(int a, Parameters & /* plainParameters */){
-    return (double) a;
+static double plainFunction(double a, Parameters & /* plainParameters */){
+    return a;
 }
 
 struct method{

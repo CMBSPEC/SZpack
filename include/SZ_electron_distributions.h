@@ -21,6 +21,7 @@
 #include "routines.h"
 #include "Relativistic_MB.h"
 #include "Integration_routines.h"
+#include "Patterson.h"
 
 //TODO: Fill in the sources for these
 //==================================================================================================

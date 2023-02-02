@@ -44,6 +44,7 @@
 #include "parser.h"
 #include "global_functions.h"
 #include "Parameters.h"
+#include "ModeFunctions.h"
 #include "SZpack.h"
 
 #include "SZ_moment_method.h"

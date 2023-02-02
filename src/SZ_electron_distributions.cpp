@@ -14,6 +14,7 @@
 //==================================================================================================
 
 #include "SZ_electron_distributions.h"
+#include "global_functions.h"
 
 //TODO: Fill in the sources for these
 //==================================================================================================
@@ -70,9 +71,9 @@ double DoublePower_Dist(double eta, double alpha1, double alpha2, double p1, dou
     prefactor += pow(pcr,-alpha1+alpha2)*(pow(pcr,1-alpha2)-pow(p2,1-alpha2))/(alpha2-1);
 
     if (eta < pcr){
-        return prefactor*pow(eta,-alpha1);
+        return pow(eta,-alpha1)/prefactor;
     }
-    return prefactor*pow(pcr,-alpha1+alpha2)*pow(eta,-alpha2);
+    return pow(pcr,-alpha1+alpha2)*pow(eta,-alpha2)/prefactor;
 }
 
 double kappa_Dist(double eta, double Te, double kappa) {

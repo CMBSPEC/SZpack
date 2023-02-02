@@ -3,6 +3,8 @@
 #include <pybind11/numpy.h>
 #include <pybind11/functional.h>
 #include "SZ_nT_asymptotic.h"
+#include "routines.h"
+#include "Parameters.h"
 
 using namespace pybind11::literals;
 namespace py = pybind11;

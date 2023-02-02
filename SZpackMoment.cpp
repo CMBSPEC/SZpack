@@ -18,6 +18,7 @@
 //==================================================================================================
 
 #include "SZpackMoment.h"
+#include "global_functions.h"
 
 using namespace std;
 

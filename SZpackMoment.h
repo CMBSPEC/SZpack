@@ -24,6 +24,8 @@
 #include "SZ_moment_method.h"
 #include "SZ_Integral_moment.h"
 #include "IsothermalBestFit.h"
+#include "Relativistic_MB.h"
+#include "physical_consts.h"
 
 using namespace std;
 

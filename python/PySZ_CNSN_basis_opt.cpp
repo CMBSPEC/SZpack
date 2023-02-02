@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include "SZ_CNSN_basis.opt.h"
+#include "Parameters.h"
 
 using namespace pybind11::literals;
 namespace py = pybind11;

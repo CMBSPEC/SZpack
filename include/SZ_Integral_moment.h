@@ -15,7 +15,9 @@
 #include "SZ_moment_method.h"
 #include "routines.h"
 #include "Integration_routines.h"
+#include "Patterson.h"
 #include "nPl_derivatives.h"
+#include "physical_consts.h"
 
 using namespace std;
 
