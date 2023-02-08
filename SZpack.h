@@ -93,6 +93,7 @@ double compute_signal_CNSN(double x, Parameters &functionParameters);
 double compute_signal_CNSN_opt(double x, Parameters &functionParameters);
 double compute_signal_combo(double x, Parameters &functionParameters, bool CMBframe);
 double compute_signal_combo(double x, Parameters &functionParameters);
+double compute_signal_precise(double x, Parameters &functionParameters);
 double compute_signal_means(double x, Parameters &functionParameters, bool yw);
 double compute_signal_means_tw(double x, Parameters &functionParameters);
 double compute_signal_means_yw(double x, Parameters &functionParameters);

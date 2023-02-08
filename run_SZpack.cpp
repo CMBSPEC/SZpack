@@ -17,16 +17,9 @@
 // Author: Jens Chluba & Elizabeth Lee
 //
 // first implementation: May 2012
-// last modification   : March 2020
+// last modification   : February 2023
 //
 //==================================================================================================
-// 28th Aug,  2017: added y-weighted moment method for temperature corrections
-// 20th Dec,  2012: added runmodes CNSNopt and cleaned the routines up.
-//  5th Nov,  2012: added examples for derivative outputs and to illustrate the
-//                  temperature-velocity moment method for smooth cluster profiles.
-// 10th Aug,  2012: output of distortion now also in MJy / sr
-// 23th July, 2012: added function to compute the precision different expansions
-// 22th July, 2012: added combo function option
 
 #include <iostream>
 #include <string>
@@ -57,7 +50,10 @@ using namespace std;
 #include "./StartUp/global_variables.cpp"
 #include "./StartUp/initial_setup.cpp"
 #include "output.h"
- 
+
+
+// An optimisation to allow for the parameters object to be implicitly called instead of explicitly 
+// passing it to each function call.
 extern Parameters parameters;
 
 //==================================================================================================
@@ -67,9 +63,9 @@ extern Parameters parameters;
 //==================================================================================================
 int main(int narg, char *args[])
 {
-    //==================================================================
+    //==============================================================================================
     // startup with different number of arguments
-    //==================================================================
+    //==============================================================================================
     if(narg==1){}
     
     else if(narg==2) parameters.mode=args[narg-1];
@@ -87,72 +83,91 @@ int main(int narg, char *args[])
 
     distortionModes modes = distortionModes();
 
-    //==================================================================
-    // change this to use the convention of Nozawa et al. 2006 for 
-    // the optical depth. Interpretation of the SZ signal is different
-    // in this case. The convention of Chluba et al., 2012 is used  
-    // otherwise, which allow a clean separation of kinematic and 
-    // scattering effect.
-    // UseNozawaConvention is defined in .StartUp/global_variables.cpp 
-    // but could just be replaced with a boolean as wanted.
-    //==================================================================
+    //==============================================================================================
+    // Change this to use the convention of Nozawa et al. 2006 for the optical depth. Interpretation 
+    // of the SZ signal is different in this case. The convention of Chluba et al., 2012 is used  
+    // otherwise, which allow a clean separation of kinematic and scattering effect.
+    // UseNozawaConvention is defined in .StartUp/global_variables.cpp but can be replaced with a 
+    // boolean as wanted.
+    //==============================================================================================
     setConvention(UseNozawaConvention);
 
-    //==================================================================
-    // call in the different runmodes
-    //==================================================================
+    //==============================================================================================
+    // Call in the different runmodes
+    // This is a very large switch allowing for run_SZ_pack to calculate 
+    // a number of different objects without too much thought. i.e., 
+    // calling most of these will calculate the SZ effect from the 
+    // parameters defined. 
+    //==============================================================================================
+    // Calculating the signal by a full 5-dimensional integral.
+    // This is the slowest setting, and even slower with runmode of "full". It is also the most 
+    // 'accurate', however the accuracy of the other methods are fully documented. Normally this is 
+    // not the most relevant mode to use. See //TODO: for more details.
+    //==============================================================================================
     if(parameters.mode=="5D")
     {
         output_SZ_distortion(modes.Int5D);
     }
     
+    //==============================================================================================
+    // Calculating the signal by precomputing two of the integrals analytically, under an assumption 
+    // of low values for betac. This computes a 3-dimensional integral.
+    //==============================================================================================
     else if(parameters.mode=="3D")
     {
         output_SZ_distortion(modes.Int3D);
     }
-
-    else if(parameters.mode=="Kernel")
-    {
-        //output_SZ_distortion(modes.Kernel);
-        //TODO: Sort this
-    }
     
+    //==============================================================================================
+    // An asymptotic expansion around Te. This setting is best for Te < 2 keV. 
+    // It will throw an error for Te > 20 keV.
+    //==============================================================================================
     else if(parameters.mode=="ASYM")
     {
         output_SZ_distortion(modes.Asymptotic);
     }
     
-    //==================================================================
-    // Added the basis at additional temperature pivots. This function 
-    // should give very precise results for 2keV < Te < 75keV
-    //==================================================================
+    //==============================================================================================
+    // A pivot based interpolation scheme described in Chluba et al. 2012.
+    // This method will only calculate for 2 keV < Te < 75 keV. 
+    //==============================================================================================
     else if(parameters.mode=="CNSN")
     {
         output_SZ_distortion(modes.CNSN);
     }
     
-    //==================================================================
-    // Added the basis at additional temperature pivots. This function
-    // should give very precise results for 2keV < Te < 75keV
-    //==================================================================
+    //==============================================================================================
+    // A slightly more involved form of the previous scheme, summarised in Chluba et al. 2013.
+    // This should give very precise results for 2keV < Te < 75keV.
+    //==============================================================================================
     else if(parameters.mode=="CNSNopt")
     {
         output_SZ_distortion(modes.CNSNopt);
     }
-    //==================================================================
-    // combination of asymptotic expansion + basis functions of CNSN2012
-    // This function should give very precise results for Te < 75keV and
-    // can be used for comparison.
-    //==================================================================
+    //==============================================================================================
+    // This setting will automatically calculate using the asymptotic mode for Te < 2 keV and CNSN 
+    // above this. This function should give very precise results for Te < 75keV.
+    //==============================================================================================
     else if(parameters.mode=="COMBO")
     {
         output_SZ_distortion(modes.Combo);
     }
+
+
+    //==============================================================================================
+    // This is the combo method, but above 75 keV it will default to the 3D method.
+    //==============================================================================================
+    else if(parameters.mode=="PRECISE")
+    {
+        output_SZ_distortion(modes.Precise);
+    }
         
-    //==================================================================
-    // check the precision of the basis function. 
-    //==================================================================
-    else if(parameters.mode=="ACC")
+    //==============================================================================================
+    // This is an example of a function to calculate the accuracy of a given method for calculating
+    // the SZ effect. This compares to the precise method to determine the maximal absolute 
+    // deviation between it and the given method. 
+    //==============================================================================================
+    else if(parameters.mode=="ACCURACY")
     {
         double DI_s = 4.881e-5; // fiducial accuracy according to CSNN 2012
 
@@ -171,31 +186,44 @@ int main(int narg, char *args[])
         temp.T = TemperatureIterators(1.0, 15.0, 50); //originally 1, 4, 40 in moment method
         
         for(double Te : temp.T.Trange){
+            // This function is declared in output.h and calculates and outputs the required value
             compute_precision_of_basis(Te, Method, temp, ofile, DI_s);
         }
         
         ofile.close();
     }
 
-    //==================================================================
-    // expansion of SZ signal around mean values
-    //==================================================================
+    //==============================================================================================
+    // Calculating the signal using moments to account for variations of temperature and velocity 
+    // within the line of sight. Described in detail in Chluba et al. 2013. i.e., the means method.
+    //==============================================================================================
     else if(parameters.mode=="MEANS")
     {
         output_SZ_distortion(modes.Means);
     }
 
-    //==================================================================
-    // expansion of SZ signal around mean values using y-weighted values
-    //==================================================================
+    //==============================================================================================
+    // This is the means method as before, but now the weighting used in determining these values 
+    // is y-weighted, rather than Dtau-weighted. See Lee et al. 2020 for more details.
+    //==============================================================================================
     else if(parameters.mode=="MEANSYW")
     {
         output_SZ_distortion(modes.Means_Yweighted);
     }
 
-    //==================================================================
-    // compute null of SZ signal. For details see function
-    //==================================================================
+    //==============================================================================================
+    //TODO: fix this 
+    //==============================================================================================
+    else if(parameters.mode=="Kernel")
+    {
+        //output_SZ_distortion(modes.Kernel);
+        //TODO: Sort this
+    }
+
+    //==============================================================================================
+    // An example of a function using the null method to find the change in null crossing point for 
+    // a variety of values of temperature, betac, omega, sigma, kappa and betac2_perp.
+    //==============================================================================================
     else if(parameters.mode=="NULL")
     {
         string fileAddition = "SZ";
@@ -208,18 +236,22 @@ int main(int narg, char *args[])
 
         Parameters temp = Parameters();
         temp.copyParameters(parameters);
+        //Setting a variety of temperatures to find the nulls in
         temp.T = TemperatureIterators(1.0, 70.0, 200, 1); //Change 1 to 0 to have a linear grid in T
 
+        // Overwriting a number of the parameters set to be the specific values wanted in the function.
         temp.Dtau = 1.0;
         temp.betac = temp.betao = temp.muc = temp.muo = 0.0;
         temp.setCalcValues();
         temp.calc.betac_para = temp.means.Omega = temp.means.Sigma = temp.means.kappa = temp.calc.betac2_perp = 0.0;
 
+        // Setting example arrays to iterate over, we will find the nulls for each of these values at
+        // each of the temperatures defined above
         vector<double> betac_para_array = {0.001, -0.001, 0.005, -0.005, 0.01, -0.01};
         vector<double> omega_array = {0.01, 0.05, 0.1, 0.2, 0.4};
         vector<double> sigma_array = {0.001, -0.001, 0.002, -0.002, 0.005, -0.005, 0.01, -0.01};
         vector<double> kappa_array = {0.0001};
-        vector<double> betac2_perp_array = {0.0001}; //These are example values to iterate over!
+        vector<double> betac2_perp_array = {0.0001}; 
 
         for(int k = 0; k < temp.T.np; k++)
         {
@@ -227,7 +259,9 @@ int main(int narg, char *args[])
             double x0=compute_null_of_SZ_signal(temp);
             
             ofile << temp.Te << " " << x0 << ":" << endl;
-                
+            
+            // This function is defined in output.h and calculates the change in null for each value 
+            // in the given array, for the defined parameter being changed.
             IterateForNull(ofile, betac_para_array,
                 [temp](const double &betac_para) mutable -> Parameters& {
                     temp.calc.betac_para = betac_para; return temp;
@@ -249,24 +283,35 @@ int main(int narg, char *args[])
                     temp.calc.betac2_perp = betac2_perp; return temp;
                 }, x0);
             
+            // Calculating the derivatives defined in header
             double dI = Dcompute_signal_combo_for_x(x0, temp, 1);
             double d2I = Dcompute_signal_combo_for_x(x0, temp, 2);
 
             ofile << -d2I/dI << endl;
             
+            // A terminal output to keep track of the progress of the function
             cout << temp.Te << endl;
         }
         
         ofile.close();
     }
 
-    //==================================================================
-    // compute derivatives of SZ signal 
-    //==================================================================
+    //==============================================================================================
+    // This is an example function to computes various derivatives of the SZ signal.
+    // The methods calculate the derivatives in the CMB frame, with respect to The, betac_para and 
+    // betac2_perp. Derivatives can also be calculated with respect to x. 
+    // Most of the function details are hidden within output_derivatives while this function 
+    // calculates and outputs the derivatives:
+    // 1/(i!j!k!)*(d^i/dThe^i)(d^j/dbetac_para^j)(d^k/dbetac2_perp^k)(signal) for i<=4, j<=2, k<=1
+    // (where i=j=k=0 returns the combo signal itself)
+    // It then additionally computes d^n/dx^n (signal) for n<=2 (n=0 returns the combo signal)
+    //==============================================================================================
     else if(parameters.mode=="DERIVS")
-    {//outputs derivatives for a number of temperatures.
-        int maxderiv=4;
+    {
+        int maxderiv=4; //i.e., the maximum value of i
         
+        // This outputs the derivatives for a selection of temperatures.
+        // output_derivatives can be found in output.h/output.cpp
         output_derivatives(5, maxderiv);
         output_derivatives(8, maxderiv);
         output_derivatives(10, maxderiv);
@@ -276,20 +321,26 @@ int main(int narg, char *args[])
         output_derivatives(50, maxderiv);
     }
     
-    //==================================================================
-    // expansion of SZ signal around mean values
-    //==================================================================
-    else if(parameters.mode=="RELCORR")
+    //==============================================================================================
+    // This is an example function to calculate the diffeerences between the means method and the 
+    // combo method variously.
+    //==============================================================================================
+    else if(parameters.mode=="CORR")
     {
-        // for additional second order parameters see function itself
+        // The means method in question
         output_SZ_distortion(modes.Means);
+        // This function calculates the relativistic corrections. i.e., the differences between the 
+        // non-relativistic method and the combo method, in the CMB frame.
         output_SZ_distortion(modes.RelativisticCorrections);
+        // This calculates the difference between the means signal given the omega, sigma and kappa 
+        // values that have been set (i.e., the means method), and the signal without these 
+        // variables (the combo method), all calculated in the CMB frame.
         output_SZ_distortion(modes.TemperatureDispersion);
     }
     
-    //==================================================================
-    // SZ signal for two-temperature case
-    //==================================================================
+    //==============================================================================================
+    // An example function using the two temperatures method to compare to the means method
+    //==============================================================================================
     else if(parameters.mode=="TWOT")
     {
         double ftau = 0.2;
@@ -337,29 +388,29 @@ int main(int narg, char *args[])
         ofile.close();
     }
     
-    //==================================================================
-    // average y relativistic corrections
-    //==================================================================
+    //==============================================================================================
+    // An example function to calculate a number nT of normalised SZ signals for temperatures 
+    // Te+n*DTe
+    //==============================================================================================
     else if(parameters.mode=="AVYRELSZ")
     {
-        //outputs a number nT of normalised SZ signals for temperatures Te+n*DTe * a multiplicative factor
-        //fac = Io the observer intensity * chosen y parameter.
         string fname="./outputs.normalised/SZ_normalized.dat";
         ofstream ofile(fname.c_str());
         ofile.precision(16);
         
+        // Setting up the specific values that are used in the function
         double Te=0.001, DTe=3.0;
         int nT=10, nfreq=1000;
         double xmin = 0.01, xmax = 25.0;
     
-        double xo=0.01760533;
+        // Specific y parameter for outputting in a normalised manner
         double y_param = 6.493939*1.0e-2;
         
+        // vectors to be filled when iterated over
         vector<double> norm(nT);
-        vector<double> dum(nfreq);
         vector<vector<double> > SZsig(nT);
         
-        //reset parameters to match what is wanted.
+        // reset parameters to match what is wanted.
         Parameters temp = Parameters();
         temp.copyParameters(parameters);
         temp.Te = Te;
@@ -373,6 +424,7 @@ int main(int narg, char *args[])
         temp.gridpoints = nfreq;
         temp.xcmb.resize(nfreq);
         init_xarr(xmin, xmax, &temp.xcmb[0], nfreq, 0, 0); // linear frequency grid, to allow for easier normalisation.
+        vector<double> nus = temp.get_nucmb();
         
         ofile << "DI*y/norm ";
         // compute signals for different temperatures
@@ -385,7 +437,7 @@ int main(int narg, char *args[])
         ofile << endl;
         
         // compute normalizations
-        for(int l=0; l<10; l++) { //linear integration approximation.
+        for(int l=0; l<10; l++) { //linear integration approximation
             norm[l]=0.0;
             for(int k=0; k<nfreq; k++){
                 norm[l]+=SZsig[l][k];
@@ -395,7 +447,7 @@ int main(int narg, char *args[])
 
         // output to file
         for(int k=0; k<nfreq; k++) {
-            ofile << temp.xcmb[k]/xo << " ";
+            ofile << nus[k] << " ";
             for(int l=0; l<10; l++){
                 ofile << SZsig[l][k]*y_param/norm[l] << " ";
             }

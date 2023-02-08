@@ -35,7 +35,7 @@ clean:
 
 cleanall:
 	rm -f ./src/*.o ./src/*~
-	rm -f *.o *~ run_SZpack run_SZ_moment_method libSZpack.a 
+	rm -f *.o *~ run_SZpack run_SZ_moment_method run_multiple_scatt libSZpack.a 
 
 cleanallDEV: cleanall
 	rm -f $(DEV_DIR)/*.o $(DEV_DIR)/*.~

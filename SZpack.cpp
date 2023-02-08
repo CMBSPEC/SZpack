@@ -155,6 +155,11 @@ double compute_signal_combo(double x, Parameters &fp){
     return compute_signal_combo(x, fp, true);
 }
 
+double compute_signal_precise(double x, Parameters &fp){
+    if (fp.Te > 75){ return compute_signal_3D(x, fp); }
+    return compute_signal_combo(x, fp);
+}
+
 //==================================================================================================
 // Derivatives (The^k d^k_dThe /k!) (d^m_dbetapara /m!) (d^l_beta2perp /l!) S(...)
 // in the CMB frame for a resting observer. Maximal orders in The and betac are used to compute 

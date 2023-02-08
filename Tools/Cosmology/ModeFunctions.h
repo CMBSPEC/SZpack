@@ -15,7 +15,7 @@ using namespace std;
 
 typedef double (*modefunction)(double, Parameters &);
 
-static double plainFunction(double a, Parameters & /* plainParameters */){
+static double plainFunction(double a, Parameters &){
     return a;
 }
 
@@ -46,6 +46,7 @@ class distortionModes{
     method CNSN;
     method CNSNopt;
     method Combo;
+    method Precise;
     method Means;
     method Means_Yweighted;
     method RelativisticCorrections;
@@ -59,6 +60,7 @@ class distortionModes{
         CNSN = method(&compute_signal_CNSN,"SZ_CNSN_basis","Integral using improved basis of CNSN 2012 (2keV < Te < 75 keV)");
         CNSNopt = method(&compute_signal_CNSN_opt,"SZ_CNSN_opt_basis","Integral using improved basis of CNSN 2012 with optimization of temperature terms");
         Combo = method(&compute_signal_combo,"SZ_combo","Integral using combo of asymptotic expansion and CNSN basis (Te < 75 keV at most)");
+        Precise = method(&compute_signal_precise,"SZ_precise","Integral using combo of asymptotic expansion and CNSN basis, switching to 3D for T > 75 keV");
         Means = method(&compute_signal_means_tw,"SZ_means","Integral using expansion around mean values - tau weighted");
         Means_Yweighted = method(&compute_signal_means_yw,"SZ_means_yw","Integral using expansion around mean values - y weighted");
         RelativisticCorrections = method(&compute_signal_RelCorrs,"SZ_rel_corrs","Integral using expansion around mean values and computing relativistic correction");
