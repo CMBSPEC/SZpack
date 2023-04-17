@@ -94,7 +94,7 @@ double Integral5D::Calculate_full(){
     //
     return nx*(exp(xv-xvp)*dex/dexp-1.0);
 }
-//The cut higher order version from before
+
 void Integral5D::Calculate_HigherOrder_Variables(){
     exp_mx=exp(-x);
     dex=one_minus_exp_mx(x, exp_mx); 

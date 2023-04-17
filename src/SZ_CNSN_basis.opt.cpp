@@ -184,6 +184,7 @@ namespace CNSNopt_accuracies{
     }
 }
 
+//TODO: remove CMBframe bool. Values sbould be all in the CMB frame always.
 //==================================================================================================
 //
 // SZ effect using interpolation of derivative terms
@@ -262,20 +263,20 @@ void IntegralCNSNopt::getAccuracySettings(int kmax, int accuracy_level){
         if(kmax<3 || kmax>5){
             exit_error("compute_SZ_distortion_CNSN_basis_opt :: kmax = 3 - 5 only (was " + to_string(kmax) + ")");
         }
-        accuracy = CNSNopt_accuracies::acc_I[kmax-3];
+        accuracy = CNSNopt_accuracies::acc_II[kmax-3];
     }
     else if(accuracy_level==2){
         if(kmax<4 || kmax>6){
             exit_error("compute_SZ_distortion_CNSN_basis_opt :: kmax = 4 - 6 only (was " + to_string(kmax) + ")");
         }
-        accuracy = CNSNopt_accuracies::acc_I[kmax-4];
+        accuracy = CNSNopt_accuracies::acc_III[kmax-4];
     }
     else if(accuracy_level==3) 
     {
         if(kmax!=6){
             exit_error("compute_SZ_distortion_CNSN_basis_opt :: kmax = 6 only (was " + to_string(kmax) + ")");
         }
-        accuracy = CNSNopt_accuracies::acc_I[kmax-6];
+        accuracy = CNSNopt_accuracies::acc_IV[kmax-6];
     }
     else { 
         exit_error("compute_SZ_distortion_CNSN_basis_opt :: accuracy level not available. Should be 0-3 ");
