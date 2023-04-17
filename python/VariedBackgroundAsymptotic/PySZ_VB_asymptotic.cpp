@@ -2,14 +2,14 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include <pybind11/functional.h>
-#include "SZ_nT_asymptotic.h"
+#include "SZ_VB_asymptotic.h"
 #include "routines.h"
 #include "Parameters.h"
 
 using namespace pybind11::literals;
 namespace py = pybind11;
 
-void init_ex_nT_asym(py::module_ &m){
+void init_ex_VB_asym(py::module_ &m){
     m.def("radio_distortion", [](Parameters fp, bool DI, bool CMBframe){
                     vector<double> Dn; compute_radio_distortion(Dn, fp, DI, CMBframe);
                     return py::array(Dn.size(), Dn.data());}, "Params"_a, "DI"_a=true, "CMBframe"_a=false,

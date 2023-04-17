@@ -18,7 +18,7 @@
 //==================================================================================================
 // 10/2021 : This contains a repeat of the data found in SZ_asymptotic.cpp
 
-#include "SZ_nT_asymptotic.h"
+#include "SZ_VB_asymptotic.h"
 
 #include <cmath>
 

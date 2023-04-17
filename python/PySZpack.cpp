@@ -18,7 +18,7 @@ void init_ex_5d(py::module_ &);
 void init_ex_nonrel(py::module_ &);
 void init_ex_kernel(py::module_ &);
 void init_ex_e_dists(py::module_ &);
-void init_ex_nT_asym(py::module_ &);
+void init_ex_VB_asym(py::module_ &);
 
 PYBIND11_MODULE(SZpack, m) {
     m.doc() = "The python wrapper for SZpack.";
@@ -226,7 +226,7 @@ PYBIND11_MODULE(SZpack, m) {
     py::module eDist = m.def_submodule("ElectronDistributions", "An extension submodule to pair with the MultipoleKernel module. This defines some "
         "preset electron distributions that might be of interest. (See Lee et al. 2021 for more details.)");
     init_ex_e_dists(eDist);
-    py::module nTasym = m.def_submodule("nT_asymptotic", "An extension submodule to calculate the SZ signal for user defined background photon "
+    py::module VBasym = m.def_submodule("VB_asymptotic", "An extension submodule to calculate the SZ signal for user defined background photon "
         "distributions, i.e., alternatives to the CMB backlight. (See Lee et al. 2021 for more details.)");
-    init_ex_nT_asym(nTasym);
+    init_ex_VB_asym(VBasym);
 }

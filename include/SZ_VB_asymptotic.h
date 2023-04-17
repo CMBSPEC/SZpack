@@ -20,8 +20,8 @@
 // 10th July: added basis functions in the CMB rest frame
 // 02/2020: Added Class structure
 
-#ifndef SZ_NT_ASYMPTOTIC_H
-#define SZ_NT_ASYMPTOTIC_H
+#ifndef SZ_VB_ASYMPTOTIC_H
+#define SZ_VB_ASYMPTOTIC_H
 
 #include <functional>
 #include <string>
