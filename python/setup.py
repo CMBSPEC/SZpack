@@ -7,7 +7,7 @@ home = path.realpath("..")
 
 places = sorted(glob(path.join(home,"python/*.cpp"))+
                 glob(path.join(home,"python/MultipoleKernel/*.cpp"))+
-                glob(path.join(home,"python/NonThermalAsymptotic/*.cpp"))+
+                glob(path.join(home,"python/VariedBackgroundAsymptotic/*.cpp"))+
                 glob(path.join(home,"StartUp/global_variables.cpp"))+
                 glob(path.join(home,"Tools/Cosmology/*.cpp"))+
                 glob(path.join(home,"Tools/Simple_routines/*.cpp"))+

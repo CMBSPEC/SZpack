@@ -9,10 +9,17 @@ namespace py = pybind11;
 
 void init_ex_kernel(py::module_ &m){
 //Calculating distortions through the multipole kernel
-    m.def("distortion", [](const std::function<double(double)> &eDist, Parameters fp, bool DI){
-                    vector<double> Dn; compute_SZ_distortion_kernel(Dn, fp, DI, eDist);
-                    return py::array(Dn.size(), Dn.data());}, "electronDist"_a, "Params"_a, "DI"_a=true,
-                    "A function to calculate the SZ signal from a given electron distribution.");
+    m.def("distortion", [](const std::function<double(double)> &eDist, Parameters fp, bool DI, int l){
+                    vector<double> Dn; compute_SZ_distortion_kernel(Dn, fp, DI, eDist, l);
+                    return py::array(Dn.size(), Dn.data());}, "electronDist"_a, "Params"_a, "DI"_a=true, "l"_a=0,
+                    "A function to calculate the SZ signal from a given electron distribution. There are no 'all' or 'kin' runmodes. l refers "
+                    "to the photon anisotropy.");
+    
+    m.def("distortion_e_anisotropy", [](const std::function<double(double)> &eDist, Parameters fp, bool DI, int l){
+                    vector<double> Dn; compute_SZ_distortion_electron_kernel(Dn, fp, DI, eDist, l);
+                    return py::array(Dn.size(), Dn.data());}, "electronDist"_a, "Params"_a, "DI"_a=true, "l"_a=0,
+                    "A function to calculate the SZ signal from a given electron distribution. There are no 'all' or 'kin' runmodes. l refers "
+                    "to the electron anisotropy.");
     
     m.def("averaged_kernel", [](const std::function<double(double)> &eDist, Parameters fp, int l){
                     if (l>= 0) {fp.kernel.l = l;}

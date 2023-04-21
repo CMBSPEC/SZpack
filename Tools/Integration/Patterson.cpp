@@ -710,13 +710,13 @@ double Integrate_using_Patterson_adaptive(double a, double b, double epsrel, dou
 {
     if(a>=b) return 0.0;
     
-    bool show_neval=0;
+    bool show_neval=false;
     int neval=0, ntot=0, ifail=0;
-    double r;
+    double r=0.0;
     
     ifail=Integrate_using_Patterson(a, b, epsrel, epsabs, f, &neval, &r);
     ntot+=neval;
-    
+
     //==========================================================================================
     // do subdivision
     //==========================================================================================
