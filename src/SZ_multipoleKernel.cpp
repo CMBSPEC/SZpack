@@ -244,34 +244,44 @@ double MultipoleKernel::Calculate_stable(){
     if (s<s_low|| s>s_high) { return 0.0; }
     switch (l) {
     case 0:
-        if (eta >= 0.0009690){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.002917){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.002291){return Calculate_formula();}
         return Calculate_integrated();
     case 1:
-        if (eta >= 0.01749){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.01072){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.02121){return Calculate_formula();}
         return Calculate_integrated();
     case 2:
-        if (eta >= 0.06710){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.02488){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.06805){return Calculate_formula();}
         return Calculate_integrated();
     case 3:
-        if (eta >= 0.1467){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.04971){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.1442){return Calculate_formula();}
         return Calculate_integrated();
     case 4:
-        if (eta >= 0.2426){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.07960){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.2338){return Calculate_formula();}
         return Calculate_integrated();
     case 5:
-        if (eta >= 0.3499){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.1244){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.3376){return Calculate_formula();}
         return Calculate_integrated();
     case 6:
-        if (eta >= 0.4566){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.1941){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.4561){return Calculate_formula();}
         return Calculate_integrated();
     case 7:
-        if (eta >= 0.5680){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.2541){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.5379){return Calculate_formula();}
         return Calculate_integrated();
     case 8:
-        if (eta >= 0.7208){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.3217){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.6561){return Calculate_formula();}
         return Calculate_integrated();
     case 9:
-        if (eta >= 0.8667){return Calculate_formula();}
+        if (electron_anisotropy && eta >= 0.5101){return Calculate_formula();}
+        if (!electron_anisotropy && eta >= 0.7757){return Calculate_formula();}
         return Calculate_integrated();
     default:
         return Calculate_integrated();
