@@ -14,6 +14,9 @@ void init_ex_e_dists(py::module_ &m){
     m.def("boltzmann", &Boltzmann_Dist, "eta"_a, "Te"_a=5.0, 
             "The maxwell-juttner, 'relativistic boltzmann' distribution. This is the standard distribution used in SZ calculations. "
             "See the documentation for more details.");
+    m.def("kinematic_boost", &KinematicBoost_Dist, "eta"_a, "Te"_a=5.0, "betac"_a=0.1,"muc"_a=1.0, "l"_a=0, 
+            "The kinematic boosted maxwell-juttner, 'relativistic boltzmann' distribution. When used in conjunction with the electron anisotropy "
+            "kernels, this allows for the calculation of the kinematic SZ effect. See the documentation for more details.");
     m.def("cosmic_ray", &CosmicRay_Dist, "eta"_a, "alpha"_a=2.5, "p1"_a=0.1, "p2"_a=10.0,
             "This is a power-law distribution, with -alpha as the exponent and p1 and p2 as the momentum cut offs, i.e., for p1 < eta < p2. "
             "Everywhere else the distribution returns 0. See the documentation or Ensslin & Kaiser (2000) for more details.");

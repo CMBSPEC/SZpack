@@ -35,7 +35,7 @@ MultipoleKernel::MultipoleKernel(int l_i, double s_i, double eta_i, double Int_e
     Update_s(s_i);
     eta = eta_i;
     Int_eps = Int_eps_i;
-    photon_anisotropy = true;
+    electron_anisotropy = false;
     gamma0 = sqrt(1+eta*eta);
     s_low = log((gamma0-eta)/(gamma0+eta));
     s_high = log((gamma0+eta)/(gamma0-eta));
@@ -86,7 +86,7 @@ void MultipoleKernel::Calculate_integral_variables(){
     double dsig = 3.0/8.0/PI*t/kappap/gamma2*(1.0-zeta*alpha_sc*(1.0-0.5*zeta*alpha_sc));
     double dphidt = (gamma0-eta*mup)/sqrt(eta*eta*(-1+mup*mup)*(-1+mus*mus)-pow(gamma0-t*gamma0+eta*mup*(t-mus),2));
     double Plmu = 0;
-    if (photon_anisotropy) {
+    if (!electron_anisotropy) {
         for (int k=0; k<l+1; k++){
             Plmu += pow(-1,k)*Binomial(l,k)*Binomial(l+k,k)*pow((1-mus)/2,k);
         }
@@ -226,7 +226,7 @@ double MultipoleKernel::Calculate_integrated(){
 }
 
 double MultipoleKernel::Calculate_formula(){
-    if (photon_anisotropy) {
+    if (!electron_anisotropy) {
         if (s<s_low|| s>s_high) { return 0.0; }
         Calculate_formula_variables();
         double prefactor = 3/(32*pow(eta,6));
@@ -395,7 +395,7 @@ IntegralKernel::IntegralKernel(double x_i, double betac_i, double muc_i, double 
     BK = BeamKernel(l, s, eta, 0.0);
     xfac = 1.0;
     beam_kernel=fixed_eta=false;
-    photon_anisotropy = true;
+    electron_anisotropy = true;
 }
 
 IntegralKernel::IntegralKernel(double x_i, Parameters fp)
@@ -411,7 +411,7 @@ void IntegralKernel::Calculate_shared_variables(){
     xp = x*exp(s);
     MK = MultipoleKernel(l, s, eta, Int_eps);
     BK = BeamKernel(l, s, eta, mup);
-    MK.photon_anisotropy = photon_anisotropy;
+    MK.electron_anisotropy = electron_anisotropy;
 }
 
 double IntegralKernel::Calculate_kernel(int l_i){
@@ -427,8 +427,7 @@ double IntegralKernel::Calculate_monopole(int l_i){
     double Sx = xk_dk_nPl(0,x);
     double Sp= xk_dk_nPl(0,xp);
     double dist = etaDistribution(eta);
-    MK.Update_l(l_i);
-    double F = MK.Calculate_stable();
+    double F = Calculate_kernel(l_i);
     return dist*F*(Sp-Sx);
 }
 
@@ -436,8 +435,7 @@ double IntegralKernel::Calculate_dipole(int l_i){
     double Gx = xk_dk_nPl(1,x);
     double Gp = xk_dk_nPl(1,xp);
     double dist = etaDistribution(eta);
-    MK.Update_l(l_i);
-    double F = MK.Calculate_stable();
+    double F = Calculate_kernel(l_i);
     return dist*F*(Gp-Gx);
 }
 
@@ -445,8 +443,7 @@ double IntegralKernel::Calculate_quadrupole(int l_i){
     double Qx = xk_dk_nPl(2,x);
     double Qp = xk_dk_nPl(2,xp);
     double dist = etaDistribution(eta);
-    MK.Update_l(l_i);
-    double F = MK.Calculate_stable();
+    double F = Calculate_kernel(l_i);
 
     return dist*F*(Qp-Qx);
 }
@@ -457,8 +454,7 @@ double IntegralKernel::Calculate_monopole_correction(int l_i){
     double Qx = xk_dk_nPl(2,x);
     double Qp = xk_dk_nPl(2,xp);
     double dist = etaDistribution(eta);
-    MK.Update_l(l_i);
-    double F = MK.Calculate_stable();
+    double F = Calculate_kernel(l_i);
     
     return dist*F*((Qp-Qx)+3*(Gp-Gx));
 }
@@ -481,11 +477,9 @@ double IntegralKernel::sig_Boltzmann_Compton(double int_eta){
     else if(run_mode=="monopole_corr"){ 
         r = Calculate_monopole_correction(l);
     }
-    //TODO: Some kind of calculate Full
     else if(run_mode=="kernel"){
         double dist = etaDistribution(eta);
-        MK.Update_l(l);
-        double F = MK.Calculate_stable();
+        double F = Calculate_kernel(l);
         r = dist*F;
     }
     else {
@@ -496,7 +490,7 @@ double IntegralKernel::sig_Boltzmann_Compton(double int_eta){
 
 double IntegralKernel::eta_Int(double int_s){
     s = int_s;
-    if (s==0){ s = 1e-10; }
+    if (s==0){ s = 1e-15; }
     if (fixed_eta){ return sig_Boltzmann_Compton(eta); }
 
     double a=sinh(fabs(s)/2.0), b = 30.0;//lim=30.0, b=lim*(1.0+0.5*lim*0.05);
@@ -512,50 +506,40 @@ double IntegralKernel::s_Int(){
     return integral;
 }
 
-double IntegralKernel::compute_kernel(int l_i, double s_i, electronDistribution eDistribution){
+double IntegralKernel::compute_kernel(int l_i, double s_i, electronDistribution eDistribution, bool e_anis){
+    electron_anisotropy = e_anis;
     run_mode = "kernel";
     l = l_i;
     etaDistribution = eDistribution;
+    electron_anisotropy = false;
     return eta_Int(s_i);
 }
 
-double IntegralKernel::compute_electron_kernel(int l_i, double s_i, electronDistribution eDistribution){
-    photon_anisotropy = false;
-    double return_val = compute_kernel(l_i,s_i,eDistribution);
-    photon_anisotropy = true;
-    return return_val;
-}
-
-double IntegralKernel::compute_distortion(string mode, electronDistribution eDistribution, int l_i){
+double IntegralKernel::compute_distortion(string mode, electronDistribution eDistribution, int l_i, bool e_anis){
+    electron_anisotropy = e_anis;
     run_mode="monopole";
     if(mode=="monopole" || mode=="dipole" || mode=="quadrupole" || mode=="monopole_corr"){
         run_mode = mode;
     }
     etaDistribution = eDistribution;
     l=l_i;
-    return s_Int();
+    double result = s_Int();
+    electron_anisotropy = false;
+    return result;
 }
 
-double IntegralKernel::compute_electron_distortion(string mode, electronDistribution eDistribution, int l_i){
-    photon_anisotropy = false;
-    double return_val = compute_distortion(mode,eDistribution,l_i);
-    photon_anisotropy = true;
-    return return_val;
-}
-
-double IntegralKernel::compute_distortion_fixed_eta(string mode, double eta_i, int l){
-    run_mode="monopole";
+double IntegralKernel::compute_distortion_fixed_eta(string mode, double eta_i, int l_i, bool e_anis){
     fixed_eta = true;
     eta = eta_i;
-    double result = compute_distortion(mode, etaDistribution);
+    double result = compute_distortion(mode, etaDistribution, l_i, e_anis);
     fixed_eta = false;
     return result;
 }
 
-double IntegralKernel::compute_beam_distortion(double mup_i, string mode, electronDistribution eDistribution){
+double IntegralKernel::compute_beam_distortion(double mup_i, string mode, electronDistribution eDistribution, int l_i){
     beam_kernel = true;
     mup = mup_i;
-    double result = compute_distortion(mode, eDistribution);
+    double result = compute_distortion(mode, eDistribution, l_i);
     beam_kernel = false;
     return result;
 }
@@ -568,11 +552,11 @@ double IntegralKernel::compute_beam_kernel(double mup_i, int l_i, double s_i, el
     return result;
 }
 
-double IntegralKernel::compute_beam_distortion_fixed_eta(double mup_i, string mode, double eta_i){
+double IntegralKernel::compute_beam_distortion_fixed_eta(double mup_i, string mode, double eta_i, int l_i){
     fixed_eta = beam_kernel = true;
     eta = eta_i;
     mup = mup_i;
-    double result = compute_distortion(mode, etaDistribution);
+    double result = compute_distortion(mode, etaDistribution, l_i);
     fixed_eta = beam_kernel = false;
     return result;
 }
@@ -593,224 +577,59 @@ double IntegralKernel::compute_beam_distortion_fixed_eta(double mup_i, string mo
 //
 //==================================================================================================
 
-double compute_SZ_distortion_kernel(double x, double betac, double muc, double eps_Int, 
-                                    std::function<double(double)> eDistribution, string mode, int l){
-    IntegralKernel szDistortion = IntegralKernel(x, betac, muc, eps_Int);
-    return szDistortion.compute_distortion(mode, eDistribution,l);
-}
-
-void compute_SZ_distortion_kernel(vector<double> &Dn, vector<double> x, double betac, double muc, double eps_Int, 
-                                  bool DI, std::function<double(double)> eDistribution, string mode, int l){
-    int gridpoints = x.size();
-    Dn.resize(gridpoints);
-    Parameters fp = Parameters(); //This is just to get a value for the Dn_DI conversion 
-    IntegralKernel szDistortion = IntegralKernel(x[0], betac, muc, eps_Int);
-    Dn[0] = (DI ? pow(x[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*szDistortion.compute_distortion(mode, eDistribution,l);
-    for(int k = 1; k < gridpoints; k++){
-        szDistortion.Update_x(x[k]);
-        Dn[k] = szDistortion.compute_distortion(mode, eDistribution,l);
-        if (DI) { Dn[k] *= pow(x[k],3.0)*fp.rare.Dn_DI_conversion(); }
-    }
-}
-
-double compute_SZ_distortion_kernel(double x, Parameters fp, std::function<double(double)> eDistribution, int l){
-    IntegralKernel szDistortion = IntegralKernel(x, fp);
-    return szDistortion.compute_distortion(fp.rare.RunMode, eDistribution,l);
-}
-
 void compute_SZ_distortion_kernel(vector<double> &Dn, Parameters &fp, bool DI, 
-                                        std::function<double(double)> eDistribution, int l){
+                                        std::function<double(double)> eDistribution, int l, bool e_anis){
     Dn.resize(fp.gridpoints);
     IntegralKernel szDistortion = IntegralKernel(fp.xcmb[0], fp);
-    Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode, eDistribution,l);
-    for(int k = 1; k < fp.gridpoints; k++){
+    for(int k = 0; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
-        Dn[k] = fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode, eDistribution,l);
+        Dn[k] = fp.Dtau*szDistortion.compute_distortion(fp.rare.RunMode, eDistribution, l, e_anis);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
 
-void compute_SZ_distortion_electron_kernel(vector<double> &Dn, Parameters &fp, bool DI, std::function<double(double)> eDistribution, int l){
-    Dn.resize(fp.gridpoints);
-    IntegralKernel szDistortion = IntegralKernel(fp.xcmb[0], fp);
-    Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_electron_distortion(fp.rare.RunMode, eDistribution,l);
-    for(int k = 1; k < fp.gridpoints; k++){
-        szDistortion.Update_x(fp.xcmb[k]);
-        Dn[k] = fp.Dtau*szDistortion.compute_electron_distortion(fp.rare.RunMode, eDistribution,l);
-        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
-    }
-}
-
-double compute_averaged_kernel(int l, double s, double eps_Int, std::function<double(double)> eDistribution){
-    IntegralKernel szDistortion = IntegralKernel(1.0, 0.0, 1.0, eps_Int);
-    return szDistortion.compute_kernel(l, s, eDistribution);
-}
-
-void compute_averaged_kernel(vector<double> &Dn, int l, vector<double> s, double eps_Int, std::function<double(double)> eDistribution){
-    int gridpoints = s.size();
-    Dn.resize(gridpoints);
-    IntegralKernel szDistortion = IntegralKernel(1.0, 0.0, 1.0, eps_Int);
-    for(int k = 0; k < gridpoints; k++){
-        Dn[k] = szDistortion.compute_kernel(l, s[k], eDistribution);
-    }
-}
-
-double compute_averaged_kernel(double s, Parameters fp, std::function<double(double)> eDistribution){
-    IntegralKernel szDistortion = IntegralKernel(0.1, fp);
-    return szDistortion.compute_kernel(fp.kernel.l, s, eDistribution);
-}
-
-void compute_averaged_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution){
+void compute_averaged_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution, int l_i, bool e_anis){
     Dn.resize(fp.gridpoints);
     IntegralKernel szDistortion = IntegralKernel(0.1, fp);
     for(int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = szDistortion.compute_kernel(fp.kernel.l, fp.kernel.srange[k], eDistribution);
+        Dn[k] = szDistortion.compute_kernel(l_i, fp.kernel.srange[k], eDistribution, e_anis);
     }
 }
 
-void compute_averaged_electron_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution){
+void compute_SZ_distortion_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double eta, int l_i, bool e_anis){
     Dn.resize(fp.gridpoints);
-    IntegralKernel szDistortion = IntegralKernel(0.1, fp);
+    IntegralKernel szDistortion = IntegralKernel(fp.xcmb[0], fp);
     for(int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = szDistortion.compute_electron_kernel(fp.kernel.l, fp.kernel.srange[k], eDistribution);
-    }
-}
-
-
-double compute_SZ_distortion_fixed_eta(double x, double eta, double betac, double muc, double eps_Int, string mode){
-    IntegralKernel szDistortion = IntegralKernel(x, betac, muc, eps_Int);
-    return szDistortion.compute_distortion_fixed_eta(mode, eta);
-}
-
-void compute_SZ_distortion_fixed_eta(vector<double> &Dn, vector<double> x, double eta, double betac, double muc,
-                                     double eps_Int, bool DI, string mode){
-    int gridpoints = x.size();
-    Dn.resize(gridpoints);
-    Parameters fp = Parameters(); //This is just to get a value for the Dn_DI conversion 
-    IntegralKernel szDistortion = IntegralKernel(x[0], betac, muc, eps_Int);
-    Dn[0] = (DI ? pow(x[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*szDistortion.compute_distortion_fixed_eta(mode, eta);
-    for(int k = 1; k < gridpoints; k++){
-        szDistortion.Update_x(x[k]);
-        Dn[k] = szDistortion.compute_distortion_fixed_eta(mode, eta);
-        if (DI) { Dn[k] *= pow(x[k],3.0)*fp.rare.Dn_DI_conversion(); }
-    }
-}
-
-double compute_SZ_distortion_fixed_eta(double x, Parameters fp, double eta){
-    IntegralKernel szDistortion = IntegralKernel(x, fp);
-    return szDistortion.compute_distortion_fixed_eta(fp.rare.RunMode, eta);
-}
-
-void compute_SZ_distortion_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double eta){
-    Dn.resize(fp.gridpoints);
-    IntegralKernel szDistortion = IntegralKernel(fp.xcmb[0], fp);
-    Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_distortion_fixed_eta(fp.rare.RunMode, eta);
-    for(int k = 1; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
-        Dn[k] = fp.Dtau*szDistortion.compute_distortion_fixed_eta(fp.rare.RunMode, eta);
+        Dn[k] = fp.Dtau*szDistortion.compute_distortion_fixed_eta(fp.rare.RunMode, eta, l_i, e_anis);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
 
-
-double compute_SZ_distortion_beam_kernel(double x, double mup, double betac, double muc, double eps_Int,
-                                         std::function<double(double)> eDistribution, string mode){
-    IntegralKernel szDistortion = IntegralKernel(x, betac, muc, eps_Int);
-    return szDistortion.compute_beam_distortion(mup, mode, eDistribution);
-}
-
-void compute_SZ_distortion_beam_kernel(vector<double> &Dn, vector<double> x, double mup, double betac, double muc, double eps_Int, 
-                                       bool DI, std::function<double(double)> eDistribution, string mode){
-    int gridpoints = x.size();
-    Dn.resize(gridpoints);
-    Parameters fp = Parameters(); //This is just to get a value for the Dn_DI conversion 
-    IntegralKernel szDistortion = IntegralKernel(x[0], betac, muc, eps_Int);
-    Dn[0] = (DI ? pow(x[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*szDistortion.compute_beam_distortion(mup, mode, eDistribution);
-    for(int k = 1; k < gridpoints; k++){
-        szDistortion.Update_x(x[k]);
-        Dn[k] = szDistortion.compute_beam_distortion(mup, mode, eDistribution);
-        if (DI) { Dn[k] *= pow(x[k],3.0)*fp.rare.Dn_DI_conversion(); }
-    }
-}
-
-double compute_SZ_distortion_beam_kernel(double x, Parameters fp, double mup, std::function<double(double)> eDistribution){
-    IntegralKernel szDistortion = IntegralKernel(x, fp);
-    return szDistortion.compute_beam_distortion(mup, fp.rare.RunMode, eDistribution);
-}
-
-void compute_SZ_distortion_beam_kernel(vector<double> &Dn, Parameters &fp, bool DI, double mup, std::function<double(double)> eDistribution){
+void compute_SZ_distortion_beam_kernel(vector<double> &Dn, Parameters &fp, bool DI, double mup, std::function<double(double)> eDistribution, int l_i){
     Dn.resize(fp.gridpoints);
     IntegralKernel szDistortion = IntegralKernel(fp.xcmb[0], fp);
-    Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_beam_distortion(mup, fp.rare.RunMode, eDistribution);
-    for(int k = 1; k < fp.gridpoints; k++){
+    for(int k = 0; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
-        Dn[k] = fp.Dtau*szDistortion.compute_beam_distortion(mup, fp.rare.RunMode, eDistribution);
+        Dn[k] = fp.Dtau*szDistortion.compute_beam_distortion(mup, fp.rare.RunMode, eDistribution, l_i);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }
 
-
-double compute_averaged_beam_kernel(int l, double s, double mup, double eps_Int, std::function<double(double)> eDistribution){
-    IntegralKernel szDistortion = IntegralKernel(1.0, 0.0, 1.0, eps_Int);
-    return szDistortion.compute_beam_kernel(mup, l, s, eDistribution);
-}
-
-void compute_averaged_beam_kernel(vector<double> &Dn, int l, vector<double> s, double mup, double eps_Int,
-                                  std::function<double(double)> eDistribution){
-    int gridpoints = s.size();
-    Dn.resize(gridpoints);
-    IntegralKernel szDistortion = IntegralKernel(1.0, 0.0, 1.0, eps_Int);
-    for(int k = 0; k < gridpoints; k++){
-        Dn[k] = szDistortion.compute_beam_kernel(mup, l, s[k], eDistribution);
-    }
-}
-
-double compute_averaged_beam_kernel(double s, Parameters fp, double mup, std::function<double(double)> eDistribution){
-    IntegralKernel szDistortion = IntegralKernel(0.1, fp);
-    return szDistortion.compute_beam_kernel(mup, fp.kernel.l, s, eDistribution);
-}
-
-void compute_averaged_beam_kernel(vector<double> &Dn, Parameters &fp, double mup, std::function<double(double)> eDistribution){
+void compute_averaged_beam_kernel(vector<double> &Dn, Parameters &fp, double mup, std::function<double(double)> eDistribution, int l_i){
     Dn.resize(fp.gridpoints);
     IntegralKernel szDistortion = IntegralKernel(0,fp);
     for(int k = 0; k < fp.gridpoints; k++){
-        Dn[k] = szDistortion.compute_beam_kernel(mup, fp.kernel.l, fp.kernel.srange[k], eDistribution);
+        Dn[k] = szDistortion.compute_beam_kernel(mup, l_i, fp.kernel.srange[k], eDistribution);
     }
 }
 
-
-double compute_SZ_distortion_beam_kernel_fixed_eta(double x, double mup, double eta, double betac, double muc, 
-                                                   double eps_Int, string mode){
-    IntegralKernel szDistortion = IntegralKernel(x, betac, muc, eps_Int);
-    return szDistortion.compute_beam_distortion_fixed_eta(mup, mode, eta);
-}
-
-void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, vector<double> x, double mup, double eta, double betac, double muc, 
-                                       double eps_Int, bool DI, string mode){
-    int gridpoints = x.size();
-    Dn.resize(gridpoints);
-    Parameters fp = Parameters(); //This is just to get a value for the Dn_DI conversion 
-    IntegralKernel szDistortion = IntegralKernel(x[0], betac, muc, eps_Int);
-    Dn[0] = (DI ? pow(x[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*szDistortion.compute_beam_distortion_fixed_eta(mup, mode, eta);
-    for(int k = 1; k < gridpoints; k++){
-        szDistortion.Update_x(x[k]);
-        Dn[k] = szDistortion.compute_beam_distortion_fixed_eta(mup, mode, eta);
-        if (DI) { Dn[k] *= pow(x[k],3.0)*fp.rare.Dn_DI_conversion(); }
-    }
-}
-
-double compute_SZ_distortion_beam_kernel_fixed_eta(double x, Parameters fp, double mup, double eta){
-    IntegralKernel szDistortion = IntegralKernel(x, fp);
-    return szDistortion.compute_beam_distortion_fixed_eta(mup, fp.rare.RunMode, eta);
-}
-
-void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double mup, double eta){
+void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double mup, double eta, int l_i){
     Dn.resize(fp.gridpoints);
     IntegralKernel szDistortion = IntegralKernel(fp.xcmb[0], fp);
-    Dn[0] = (DI ? pow(fp.xcmb[0],3.0)*fp.rare.Dn_DI_conversion() : 1.0)*fp.Dtau*szDistortion.compute_beam_distortion_fixed_eta(mup, fp.rare.RunMode, eta);
-    for(int k = 1; k < fp.gridpoints; k++){
+    for(int k = 0; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
-        Dn[k] = fp.Dtau*szDistortion.compute_beam_distortion_fixed_eta(mup, fp.rare.RunMode, eta);
+        Dn[k] = fp.Dtau*szDistortion.compute_beam_distortion_fixed_eta(mup, fp.rare.RunMode, eta, l_i);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }

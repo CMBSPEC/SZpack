@@ -18,9 +18,7 @@
 
 //TODO: Fill in the sources for these
 //==================================================================================================
-// 
 // The electron momentum distribution for thermal electrons
-//
 //==================================================================================================
 double Boltzmann_Dist(double eta, double Te) {
     double The = Te/const_me;
@@ -33,9 +31,20 @@ double Boltzmann_Dist(double eta, double Te) {
 //TODO: add non-relativistic Maxwell boltzmann also
 
 //==================================================================================================
-// 
+// kinematic boost model
+//==================================================================================================
+double KinematicBoost_Dist(double eta, double Te, double betac, double muc, int l){
+    double The = Te/const_me;
+    double gammac = 1/sqrt(1-betac*betac);
+    double fth = Boltzmann_Dist(eta*gammac,Te);
+    double Pl = LegendreP(l, muc);
+    double A = gammac*betac*eta/The;
+    double norm = sqrt(PI/2/A);
+    return gsl_sf_bessel_Inu(l+0.5,A)*Pl*fth*(2.0*l+1.0)*norm*pow(-1,l);
+}
+
+//==================================================================================================
 // Different models for temperature distributions
-//
 //==================================================================================================
 double CosmicRay_Dist(double eta, double alpha, double p1, double p2) {
     if (eta < p1 || eta > p2){

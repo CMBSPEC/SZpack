@@ -52,7 +52,7 @@ class MultipoleKernel{
     MultipoleKernel(int l_i, double s_i, double eta_i, double Int_eps_i);
     void Update_s(double s_i);
     void Update_l(int l_i);
-    bool photon_anisotropy;
+    bool electron_anisotropy;
 
     private:
     void Calculate_integral_variables();
@@ -99,7 +99,7 @@ class IntegralKernel{
     int l;
     double s, eta, xfac, xp, mup;
 
-    bool beam_kernel, fixed_eta, photon_anisotropy;
+    bool beam_kernel, fixed_eta, electron_anisotropy;
 
     electronDistribution etaDistribution;
     MultipoleKernel MK;
@@ -126,15 +126,13 @@ class IntegralKernel{
     double s_Int();
 
     public:
-    double compute_distortion(string mode, electronDistribution eDistribution, int l_i=0);
-    double compute_electron_distortion(string mode, electronDistribution eDistribution, int l_i=0);
-    double compute_kernel(int l_i, double s_i, electronDistribution eDistribution);
-    double compute_distortion_fixed_eta(string mode, double eta_, int l_i=0);
-    double compute_electron_kernel(int l_i, double s_i, electronDistribution eDistribution);
+    double compute_distortion(string mode, electronDistribution eDistribution, int l_i=0, bool e_anis=false);
+    double compute_kernel(int l_i, double s_i, electronDistribution eDistribution, bool e_anis=false);
+    double compute_distortion_fixed_eta(string mode, double eta_, int l_i=0, bool e_anis=false);
 
-    double compute_beam_distortion(double mup_i, string mode, electronDistribution eDistribution);
+    double compute_beam_distortion(double mup_i, string mode, electronDistribution eDistribution, int l_i=0);
     double compute_beam_kernel(double mup_i, int l_i, double s_i, electronDistribution eDistribution);
-    double compute_beam_distortion_fixed_eta(double mup_i, string mode, double eta_i);
+    double compute_beam_distortion_fixed_eta(double mup_i, string mode, double eta_i, int l_i=0);
 
     //TODO: function to compute distortion for fixed p0
     //TODO: All three functions but for the beam kernel instead of the multipole kernel
@@ -158,48 +156,13 @@ class IntegralKernel{
 //
 //==================================================================================================
 
-double compute_SZ_distortion_kernel(double x, double betac, double muc, double eps_Int, 
-                                    std::function<double(double)> eDistribution, string mode = "monopole", int l=0);
-void compute_SZ_distortion_kernel(vector<double> &Dn, vector<double> x, double betac, double muc, double eps_Int, 
-                                  bool DI, std::function<double(double)> eDistribution, string mode = "monopole", int l=0);
-double compute_SZ_distortion_kernel(double x, Parameters fp, std::function<double(double)> eDistribution, int l=0);
-void compute_SZ_distortion_kernel(vector<double> &Dn, Parameters &fp, bool DI, std::function<double(double)> eDistribution, int l=0);
+void compute_SZ_distortion_kernel(vector<double> &Dn, Parameters &fp, bool DI, std::function<double(double)> eDistribution, int l=0, bool e_anis=false);
+void compute_averaged_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution, int l=0, bool e_anis=false);
+void compute_SZ_distortion_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double eta, int l=0,  bool e_anis=false);
 
-void compute_SZ_distortion_electron_kernel(vector<double> &Dn, Parameters &fp, bool DI, std::function<double(double)> eDistribution, int l=0);
-
-double compute_averaged_kernel(int l, double s, double eps_Int, std::function<double(double)> eDistribution);
-void compute_averaged_kernel(vector<double> &Dn, int l, vector<double> s, double eps_Int,
-                             std::function<double(double)> eDistribution);
-double compute_averaged_kernel(double s, Parameters fp, std::function<double(double)> eDistribution);
-void compute_averaged_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution);
-
-void compute_averaged_electron_kernel(vector<double> &Dn, Parameters &fp, std::function<double(double)> eDistribution);
-
-double compute_SZ_distortion_fixed_eta(double x, double eta, double betac, double muc, double eps_Int, string mode = "monopole");
-void compute_SZ_distortion_fixed_eta(vector<double> &Dn, vector<double> x, double eta, double betac, double muc,
-                                     double eps_Int, bool DI, string mode = "monopole");
-double compute_SZ_distortion_fixed_eta(double x, Parameters fp, double eta);
-void compute_SZ_distortion_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double eta);
-
-double compute_SZ_distortion_beam_kernel(double x, double mup, double betac, double muc, double eps_Int,
-                                         std::function<double(double)> eDistribution, string mode = "monopole");
-void compute_SZ_distortion_beam_kernel(vector<double> &Dn, vector<double> x, double mup, double betac, double muc, double eps_Int, 
-                                       bool DI, std::function<double(double)> eDistribution, string mode = "monopole");
-double compute_SZ_distortion_beam_kernel(double x, Parameters fp, double mup, std::function<double(double)> eDistribution);
-void compute_SZ_distortion_beam_kernel(vector<double> &Dn, Parameters &fp, bool DI, double mup, std::function<double(double)> eDistribution);
-
-double compute_averaged_beam_kernel(int l, double s, double mup, double eps_Int,
-                                         std::function<double(double)> eDistribution);
-void compute_averaged_beam_kernel(vector<double> &Dn, int l, vector<double> s, double mup, double eps_Int,
-                                  std::function<double(double)> eDistribution);
-double compute_averaged_beam_kernel(double s, Parameters fp, double mup, std::function<double(double)> eDistribution);
-void compute_averaged_beam_kernel(vector<double> &Dn, Parameters &fp, double mup, std::function<double(double)> eDistribution);
-
-double compute_SZ_distortion_beam_kernel_fixed_eta(double x, double mup, double eta, double betac, double muc, 
-                                                   double eps_Int, string mode = "monopole");
-void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, vector<double> x, double mup, double eta, double betac, double muc, 
-                                                 double eps_Int, bool DI, string mode = "monopole");
-double compute_SZ_distortion_beam_kernel_fixed_eta(double x, Parameters fp, double mup, double eta);
-void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double mup, double eta);
+void compute_SZ_distortion_beam_kernel(vector<double> &Dn, Parameters &fp, bool DI, double mup, 
+                                        std::function<double(double)> eDistribution, int l=0);
+void compute_averaged_beam_kernel(vector<double> &Dn, Parameters &fp, double mup, std::function<double(double)> eDistribution, int l=0);
+void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, Parameters &fp, bool DI, double mup, double eta, int l=0);
 
 #endif
