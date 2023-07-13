@@ -28,11 +28,14 @@
 // The electron momentum distribution for thermal electrons
 //==================================================================================================
 double Boltzmann_Dist(double eta, double Te);
+double Boltzmann_Dist_gamma(double eta, double gamma, double Te);
 
 //==================================================================================================
 // kinematic boost model
 //==================================================================================================
 double KinematicBoost_Dist(double eta, double Te, double betac, double muc, int l);
+double KinematicBoost_Dist_exp(double eta, double Te, double betac, double muc, int l, int betac_order);
+
 
 //==================================================================================================
 // Different models for temperature distributions
