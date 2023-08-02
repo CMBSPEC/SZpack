@@ -33,9 +33,12 @@ double Boltzmann_Dist_gamma(double eta, double gamma, double Te);
 //==================================================================================================
 // kinematic boost model
 //==================================================================================================
+double FullKinematicBoost_Dist(double eta, double mup, double phip, double Te, double betac, double muc);
 double KinematicBoost_Dist(double eta, double Te, double betac, double muc, int l);
 double KinematicBoost_Dist_exp(double eta, double Te, double betac, double muc, int l, int betac_order);
 
+double FullKinematicModifiedJuttner(double eta, double mup, double phip, double Te, double betac, double muc);
+double Norm_FullKinematicModifiedJuttner(double Te, double betac, double muc);
 
 //==================================================================================================
 // Different models for temperature distributions

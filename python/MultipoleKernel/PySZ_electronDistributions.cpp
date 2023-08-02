@@ -43,4 +43,16 @@ void init_ex_e_dists(py::module_ &m){
             "eta"_a, "Te"_a=5.0, "c"_a=c_default, "a"_a=a_default,
             "A distribution to mimic multiple overlaying thermal distributions. The arrays c and a represent the expansion coefficients of this "
             "method. See the documentation or Kaastra et al. (2009) for more details.");
+    // The full functions for f(eta, mup, phip)        
+    m.def("full_kinematic_boost", &FullKinematicBoost_Dist, "eta"_a, "mup"_a, "phip"_a, "Te"_a=5.0, "betac"_a=0.1,"muc"_a=1.0, 
+            "The full 3D kinematic boosted maxwell-juttner, 'relativistic boltzmann' distribution. When used in conjunction "
+            "with the 5D non-thermal kernel, this allows for the calculation of the kinematic SZ effect. "
+            "See the documentation for more details.");
+    m.def("full_kinematic_boost_modified_Juttner", &FullKinematicModifiedJuttner, "eta"_a, "mup"_a, "phip"_a, "Te"_a=5.0, "betac"_a=0.1,"muc"_a=1.0, 
+            "The full 3D kinematic boosted modified maxwell-juttner distribution. When used in conjunction "
+            "with the 5D non-thermal kernel, this allows for the calculation of the kinematic SZ effect. (?) "
+            "See the documentation for more details.");
+    m.def("full_kinematic_boost_modified_Juttner_norm", &Norm_FullKinematicModifiedJuttner, "Te"_a=5.0, "betac"_a=0.1,"muc"_a=1.0, 
+            "This is the normalising factor for the full 3D kinematic boosted modified maxwell-juttner distribution. "
+            "This is a multiplicative factor calculated numerically.");
 }

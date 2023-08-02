@@ -219,7 +219,6 @@ double MultipoleKernel::Calculate_electron_multipoles(){
     return prefactor*lsum;
 }
 
-//TODO: The tlimits should probably be implemented here
 double MultipoleKernel::Calculate_integrated(){
     if (s<s_low|| s>s_high) { return 0.0; }
     return mus_Int()*t;
@@ -640,6 +639,143 @@ void compute_SZ_distortion_beam_kernel_fixed_eta(vector<double> &Dn, Parameters 
     for(int k = 0; k < fp.gridpoints; k++){
         szDistortion.Update_x(fp.xcmb[k]);
         Dn[k] = fp.Dtau*szDistortion.compute_beam_distortion_fixed_eta(mup, fp.rare.RunMode, eta, l_i);
+        if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
+    }
+}
+
+//==================================================================================================
+//
+// 5D integration carried out using Patterson scheme
+// eps_Int : relative accuracy for numerical integration (lower than 10^-6 is hard to achieve)
+// Calculates the 5D distortion for an arbitrary 
+//
+//==================================================================================================
+
+nonThermal5D::nonThermal5D(){
+    Int_eps=x=mu=mup=muep=eta=phi=phip=dx=xp=dsig=0.0;
+    exp_mx=dex=exp_mxp=dexp=nx=nxp=0.0;
+    xfac = 1.0;
+}
+
+nonThermal5D::nonThermal5D(double x_i, double eps_Int_i){
+    Int_eps = eps_Int_i;
+    x = x_i;
+    mu=mup=muep=eta=phi=phip=dx=xp=dsig=exp_mx=dex=exp_mxp=dexp=nx=nxp=0.0;
+    xfac = 1.0;
+    etamuphiDist = plainFullDistribution;
+}
+
+nonThermal5D::nonThermal5D(double x_i, Parameters fp)
+    : nonThermal5D(fp.calc.xfac*x_i, fp.relative_accuracy) {
+        xfac = fp.calc.xfac;
+    }
+
+void nonThermal5D::Update_x(double x_i){
+    x = xfac*x_i;
+}
+
+void nonThermal5D::Calculate_shared_variables(){
+    //Standard definitions
+    //==============================================================================================
+    // mu == cosine of angle of gamma  and beta 
+    // mup== cosine of angle of gamma' and beta
+    //==============================================================================================    
+    double beta=eta/sqrt(1.0+eta*eta);
+    double gamma2=1.0+eta*eta;
+    //
+    //muep=mu*mup+cos(phi-phip)*sqrt( (1.0-mu*mu)*(1.0-mup*mup) );
+    mu = muep*mup+cos(phi-phip)*sqrt((1.0-muep*muep)*(1.0-mup*mup));
+    //
+    double kappa =1.0-beta*mu;
+    double kappap=1.0-beta*muep;
+    double zeta=1.0/gamma2/kappa/kappap;
+    //
+    double alpha_sc=1.0-mup;
+
+    //The variables based on x
+    dx=x*beta*(muep-mu)/kappap;
+    xp=x+dx;
+
+    //d2sigma/dmu/dmup as defined equation 2 CNSN
+    dsig = 3.0/8.0/PI*kappa/pow(kappap, 2)/gamma2*(1.0-zeta*alpha_sc*(1.0-0.5*zeta*alpha_sc));
+}
+
+void nonThermal5D::Calculate_HigherOrder_Variables(){
+    exp_mx=exp(-x);
+    dex=one_minus_exp_mx(x, exp_mx); 
+    exp_mxp=exp(-xp);
+    dexp=one_minus_exp_mx(xp, exp_mxp);
+    nx=exp_mx/dex;
+    nxp=exp_mxp/dexp;
+}
+
+double nonThermal5D::Calculate_monopole(){
+    Calculate_HigherOrder_Variables();
+    return (nxp-nx);
+}
+
+double nonThermal5D::sig_Boltzmann_Compton(double int_phip){
+    phip = int_phip;
+    Calculate_shared_variables();
+    
+    double r = 0.0; 
+
+    r = Calculate_monopole();
+    double dist = etamuphiDist(eta, muep, phip)/4.0/PI;
+    return dist*dsig*r;
+}
+
+double nonThermal5D::phip_Int(double int_phi){
+    phi = int_phi;
+    double a=0.0, b=TWOPI;
+    double epsrel=Int_eps*0.6, epsabs=1.0e-300;
+    
+    return Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->sig_Boltzmann_Compton(int_var);});;
+}
+
+double nonThermal5D::phi_Int(double int_mup){
+    mup = int_mup;
+    double a=0.0, b=TWOPI;
+    double epsrel=Int_eps*0.7, epsabs=1.0e-300;
+    
+    return Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->phip_Int(int_var);});
+}
+
+double nonThermal5D::mup_Int(double mu_int){
+    muep = mu_int;
+    double a=-1.0, b=1.0;
+    double epsrel=Int_eps*0.8, epsabs=1.0e-300;
+    
+    return Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->phi_Int(int_var);});
+}
+
+double nonThermal5D::mue_Int(double eta_int){
+    eta = eta_int;
+    double a=-1.0, b=1.0;
+    double epsrel=Int_eps*0.9, epsabs=1.0e-300;
+    double integral = Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->mup_Int(int_var);});
+    return integral;
+}
+
+double nonThermal5D::eta_Int(){
+    double a=0.0, lim=30.0, b=lim*(1.0+0.5*lim*0.05);
+    double epsrel=Int_eps, epsabs=1.0e-300;
+    
+    return Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, [this](double int_var) { return this->mue_Int(int_var);});
+}
+
+double nonThermal5D::compute_distortion(fullElectronDistribution empDistribution){
+    etamuphiDist = empDistribution;
+    return eta_Int();
+}
+
+void compute_SZ_distortion_5DnonThermal(vector<double> &Dn, Parameters &fp, bool DI, 
+                                        std::function<double(double, double, double)> empDistribution){
+                                            Dn.resize(fp.gridpoints);
+    nonThermal5D szDistortion = nonThermal5D(fp.xcmb[0], fp);
+    for(int k = 0; k < fp.gridpoints; k++){
+        szDistortion.Update_x(fp.xcmb[k]);
+        Dn[k] = fp.Dtau*szDistortion.compute_distortion(empDistribution);
         if (DI) { Dn[k] *= pow(fp.xcmb[k],3.0)*fp.rare.Dn_DI_conversion(); }
     }
 }

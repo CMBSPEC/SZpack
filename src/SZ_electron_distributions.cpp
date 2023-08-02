@@ -37,6 +37,44 @@ double Boltzmann_Dist_gamma(double eta, double gamma, double Te) {
 //==================================================================================================
 // kinematic boost model
 //==================================================================================================
+// The full form
+double FullKinematicBoost_Dist(double eta, double mup, double phip, double Te, double betac, double muc){
+    double The = Te/const_me;
+    double gammac = 1.0/sqrt(1.0-betac*betac);
+    double gamma = sqrt(1.0+eta*eta);
+    double fth = Boltzmann_Dist_gamma(eta, gamma*gammac,Te);
+    double mug = muc*mup+cos(0.0-phip)*sqrt((1.0-muc*muc)*(1.0-mup*mup));
+    double factor = exp(-mug*gammac*betac*eta/The);
+    return factor*fth;
+}
+// The full form using the modified Juttner distribution
+double FullKinematicModifiedJuttner(double eta, double mup, double phip, double Te, double betac, double muc){
+    double The = Te/const_me;
+    double gammac = 1.0/sqrt(1.0-betac*betac);
+    double gamma = sqrt(1.0+eta*eta);
+    double mug = muc*mup+cos(0.0-phip)*sqrt((1.0-muc*muc)*(1.0-mup*mup));
+    double cmbgamma = gammac*(gamma+mug*betac*eta);
+    double fth = exp(-cmbgamma/The);
+    return eta*eta*fth/cmbgamma;
+}
+
+double intfunc_FullKinematicModifiedJuttner(double eta, double Te, double betac, double muc){
+    double a=-1.0, b=1.0;
+    double epsrel=1.0e-6, epsabs=1.0e-300;
+    double norm = Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, 
+        [eta, Te, betac, muc](double int_var) {return FullKinematicModifiedJuttner(eta, int_var, 0.0, Te, betac, muc);});
+    return norm;
+}
+
+double Norm_FullKinematicModifiedJuttner(double Te, double betac, double muc){
+    double a=0.0, lim=30.0, b=lim*(1.0+0.5*lim*0.05);
+    double epsrel=1.0e-6, epsabs=1.0e-300;
+    double norm = Integrate_using_Patterson_adaptive(a, b, epsrel, epsabs, 
+        [Te, betac, muc](double int_var) {return intfunc_FullKinematicModifiedJuttner(int_var, Te, betac, muc);});
+    return 2.0/norm;
+}
+
+// The multipole expansion
 double KinematicBoost_Dist(double eta, double Te, double betac, double muc, int l){
     double The = Te/const_me;
     double gammac = 1/sqrt(1-betac*betac);
@@ -48,6 +86,7 @@ double KinematicBoost_Dist(double eta, double Te, double betac, double muc, int 
     return gsl_sf_bessel_Inu(l+0.5,A)*Pl*fth*(2.0*l+1.0)*norm*pow(-1,l);
 }
 
+// The betac expansion of the multipole expansion
 double KinematicBoost_Dist_exp(double eta, double Te, double betac, double muc, int l, int betac_order){
     if (betac_order > 5 || betac_order<0) {
         print_message("betac_order must be between 0 and 5. Function returning the full kinematic boost dist");

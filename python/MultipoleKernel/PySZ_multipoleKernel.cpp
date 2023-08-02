@@ -104,4 +104,10 @@ void init_ex_kernel(py::module_ &m){
                     return BK.mup_limits();}, "eta"_a, "s"_a,
                     "A function to calculate the minimum and maximum mup values that can be scattered to, given an "
                     "input energy and energy ratio.");
-}
+    //Calculating distortions through the multipole kernel
+    m.def("distortion_5D", [](const std::function<double(double, double, double)> &eDist, Parameters fp, bool DI){
+                    vector<double> Dn; compute_SZ_distortion_5DnonThermal(Dn, fp, DI, eDist);
+                    return py::array(Dn.size(), Dn.data());}, "electronDist"_a, "Params"_a, "DI"_a=true,
+                    "A function to calculate the SZ signal from a given electron distribution, f(eta, mup, phip). "
+                    "This carries out a full 5D integral.");
+}  
