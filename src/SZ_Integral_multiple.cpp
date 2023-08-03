@@ -166,11 +166,14 @@ double sig_Boltzmann_Compton(double x, double The, double xi, double mu, double 
     //==============================================================================================
     else if(run_mode=="SEC")
     {
-        double S=compute_SZ_signal_3D (x , 1.0, The*const_me, 0, 0, 0, 0, Int_eps_3D*0.75);
-        double Sp=compute_SZ_signal_3D(xp, 1.0, The*const_me, 0, 0, 0, 0, Int_eps_3D*0.75);
-        return sig_Boltzmann_Compton(l, The, xi, mu, mug)*(Sp-S);
+        print_error("method currently non-functional");
+        return 0;
+        //TODO: Fix This method!
+//        double S=compute_SZ_signal_3D(x , 1.0, The*const_me, 0, 0, 0, 0, Int_eps_3D*0.75);
+//        double Sp=compute_SZ_signal_3D(xp, 1.0, The*const_me, 0, 0, 0, 0, Int_eps_3D*0.75);
+//        return sig_Boltzmann_Compton(l, The, xi, mu, mug)*(Sp-S);
         
-        if(xp>=30.0 || x>=30.0 || x<=0.01 || xp<=0.01) return 0.0;
+//        if(xp>=30.0 || x>=30.0 || x<=0.01 || xp<=0.01) return 0.0;
         
 //        double S =compute_SZ_signal_combo(x , 1.0, The*const_me, 0, 0, 0, 0);
 //        double Sp=compute_SZ_signal_combo(xp, 1.0, The*const_me, 0, 0, 0, 0);
@@ -549,7 +552,10 @@ double Compute_Kernel_interpol(int l, double s, double The)
 //==================================================================================================
 double Boltzmann_DI_Kernel(double s, void *userdata)
 {
-    double *d=(double *)userdata;
+    print_error("method currently non-functional");
+    return 0;
+    //TODO: Fix This method!
+/*   double *d=(double *)userdata;
     
     double x=d[0], xp=d[0]*exp(s);
     
@@ -558,7 +564,7 @@ double Boltzmann_DI_Kernel(double s, void *userdata)
     double S =compute_SZ_signal_combo(x, 1.0, d[1]*const_me, 0, 0, 0, 0);
     double Sp=compute_SZ_signal_combo(xp, 1.0, d[1]*const_me, 0, 0, 0, 0);
     
-    return Compute_Kernel_interpol((int)d[2], s, d[1])*(Sp-S);
+    return Compute_Kernel_interpol((int)d[2], s, d[1])*(Sp-S);*/
 }
 
 double DI_Int_Kernel(int l, double x, double The)

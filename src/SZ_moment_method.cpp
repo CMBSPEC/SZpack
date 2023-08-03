@@ -51,7 +51,7 @@
 using namespace std;
 
 //==================================================================================================
-double G_func(double x)
+/*double G_func(double x)
 { return x*exp(-x)/(1.0-exp(-x))/(1.0-exp(-x)); }
 
 double Q_func(double x)
@@ -106,6 +106,8 @@ void SZ_moment_method::setup_SZ_moment_matrix(int order_T_low, int order_T_high,
     M.resize((tot_moments+1)*(nx+1), 0.0);
     int ind;
     
+    //TODO: This function needs fixing
+    print_error("This function is not working at the moment");
     for(int n=0; n<nx; n++)
     {
         //==========================================================================================
@@ -663,7 +665,7 @@ void SZ_moment_method::determine_Te_structure(double lres)
                  << " " << Te_zeros[m][z].lmax << endl;
     }
     wait_f_r();
-*/    
+*/   /*
     return;
 }
 
@@ -1427,6 +1429,8 @@ void SZ_moment_method::compute_SZ_signal_moments_smooth(const vector<double> &om
             
     return;
 }
+
+*/
 
 //==================================================================================================
 //==================================================================================================

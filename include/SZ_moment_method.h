@@ -25,7 +25,7 @@
 #include <vector>
 
 using namespace std;
-
+/*
 class SZ_moment_method
 {
     
@@ -264,7 +264,7 @@ public:
     //==============================================================================================
     void show_profile_slice(double (*f)(double l), double lsc, int np);
     void export_profile_slice(string fname, double (*f)(double l), double lsc, int np);
-};
+};*/
 
 #endif
 
