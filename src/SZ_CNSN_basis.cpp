@@ -130,7 +130,7 @@ IntegralCNSN::IntegralCNSN(double x_i, double The_i, double betac_i, double muc_
 
 
 IntegralCNSN::IntegralCNSN(int k, Parameters fp, bool CMB, bool inputOrders)
-    : IntegralCNSN((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0)*fp.xcmb[k], fp.calc.The, fp.betac, 
+    : IntegralCNSN((inputOrders ? (CMB ? fp.calc.xfacCMB : fp.calc.xfac) : 1.0), fp.xcmb[k], fp.calc.The, fp.betac, 
                    CMB ? fp.muc : fp.calc.mucc, inputOrders ? fp.T_order : 20, inputOrders ? fp.beta_order : 2, CMB) {}
 
 void IntegralCNSN::Update_x(double x_i){
